@@ -3,5 +3,6 @@
     "dev": "deno run --allow-net --watch main.ts",
     "schema-push": "deno run -A npm:prisma@^4.5 db push",
     "schema-format": "deno run -A --unstable npm:prisma@^4.5 format",
+    "schema-generate": "deno run -A --unstable npm:prisma@^4.5 generate"
   }
 }
