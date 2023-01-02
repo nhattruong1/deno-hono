@@ -1,8 +1,8 @@
 {
   "tasks": {
-    "dev": "deno run --allow-net --watch main.ts",
+    "dev": "deno run --allow-net --node-modules-dir --watch main.ts",
     "schema-push": "deno run -A npm:prisma@^4.5 db push",
     "schema-format": "deno run -A --unstable npm:prisma@^4.5 format",
-    "schema-generate": "deno run -A --unstable npm:prisma@^4.5 generate"
+    "schema-generate": "deno run -A --unstable npm:prisma@^4.5 generate --data-proxy"
   }
 }
