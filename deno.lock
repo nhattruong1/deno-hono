@@ -358,6 +358,8 @@
     "https://deno.land/x/deno_validator@v0.0.5/lib/whitelist.ts": "6a93eebaf03491c61cbb07c6357f9aa263bc5436d098f230c729d8158f2b578d",
     "https://deno.land/x/deno_validator@v0.0.5/mod.ts": "bfaaca0fd0f2e7e5f1b3f5aac25e4fac4371d1684c3c09b724649cde3f6294f6",
     "https://deno.land/x/deno_validator@v0.0.5/types.ts": "8c1a4747ce14c73dfb6b0fcc803df1827e322c88fac6d8ff94a07786e45ab739",
+    "https://deno.land/x/dotenv@v3.2.0/mod.ts": "077b48773de9205266a0b44c3c3a3c3083449ed64bb0b6cc461b95720678d38e",
+    "https://deno.land/x/dotenv@v3.2.0/util.ts": "693730877b13f8ead2b79b2aa31e2a0652862f7dc0c5f6d2f313f4d39c7b7670",
     "https://deno.land/x/hono@v2.6.2/compose.ts": "6cf42a9779df9bb53294f796f07796961e2d70ed348cf0dd334669ac2de2fd95",
     "https://deno.land/x/hono@v2.6.2/context.ts": "804706c07573d51d6cfb9ddce7ea2eb86471f2b700439ce8aff33dab14043c7a",
     "https://deno.land/x/hono@v2.6.2/hono.ts": "fb65306bcb9f42cbf9bcab79b9177f10779c6e3b3087e4d037b78e9c59fc6744",
