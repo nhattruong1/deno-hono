@@ -1,5 +1,5 @@
 /.idea
 /node_modules
 /generated
-/core/database/client
+#/core/database/client
 .env
