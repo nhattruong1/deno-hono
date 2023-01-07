@@ -1,4 +1,7 @@
 export enum ParamType {
     Query= "query",
-    Param= "param"
+    FormData= "parseBody",
+    Json= "json",
+    TextPlain= "text",
+    ArrayBuffer= "arrayBuffer",
 }

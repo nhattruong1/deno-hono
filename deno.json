@@ -5,7 +5,7 @@
     "noImplicitThis": false
   },
   "tasks": {
-    "dev": "deno run --allow-net --node-modules-dir --watch main.ts",
+    "dev": "deno run -A --allow-net --node-modules-dir --watch main.ts",
     "schema-push": "deno run -A npm:prisma db push",
     "schema-format": "deno run -A --unstable npm:prisma format",
     "schema-generate": "deno run -A --unstable npm:prisma generate --data-proxy"
