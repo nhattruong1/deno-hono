@@ -11,3 +11,4 @@ threadRouter.get('/',
     validation(GetThreadDTO,ParamType.Query),
     handler(getThread)
 )
+
