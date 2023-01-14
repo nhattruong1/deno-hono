@@ -8,8 +8,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 enum DestinationThread {
@@ -18,22 +19,42 @@ enum DestinationThread {
   FRIEND
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  CUSTOM
+}
+
+enum LogType {
+  LOGIN
+  REFRESH_TOKEN
+  LOGOUT
+}
+
 enum ThreadPrivacy {
   PUBLIC
   PRIVATE
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  domain        String?  @unique
-  fullName      String
+  id            Int          @id @default(autoincrement())
+  userName      String?      @unique
+  email         String       @unique
+  firstName     String?
+  surName       String?
+  fullName      String?
+  gender        Gender?
+  birth         DateTime?
+  avatar        String?
   information   Json?
-  password      String?
+  password      String
   threadCreated Thread[]
-  isActive      Boolean  @default(true)
-  isDelete      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isActive      Boolean      @default(true)
+  isDelete      Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  session       Session[]
+  monitoring    Monitoring[]
 }
 
 model Thread {
@@ -47,4 +68,32 @@ model Thread {
   isDelete    Boolean           @default(false)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  refreshToken String
+  sign         String
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  ip           String?
+  location     String?
+  device       String?
+  expireAt     DateTime
+  isActive     Boolean  @default(true)
+  isDelete     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Monitoring {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      LogType
+  detail    Json?
+  isActive  Boolean  @default(true)
+  isDelete  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

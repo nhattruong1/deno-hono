@@ -16,6 +16,7 @@ async function _executeHandler(c: Context) {
         }
         return c.json(result,200)
     } catch (e) {
+        console.log(e)
         return c.json("Internal Error",500)
     }
 }

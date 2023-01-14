@@ -20,12 +20,12 @@ declare global {
 }
 window.connection = prisma;
 
-async function handlerHello(c: Context) {
+function handlerHello(c: Context) {
     return c.json({
         hello: "wold"
     })
 }
 
 app.get('/', handlerHello)
-app.route('/public',publicRouter)
+app.route('/api/public',publicRouter)
 serve(app.fetch)

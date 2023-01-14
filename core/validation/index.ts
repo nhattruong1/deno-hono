@@ -12,32 +12,31 @@ interface ErrorValidation {
 
 export function validation(dto: any,typeParams: ParamType) {
     return async function (c: Context,next: Next) {
-        const request = Object.assign(c.req);
-        const params = await request[typeParams]()
-        const dataValidate = new dto();
+        try {
+            const request = Object.assign(c.req);
+            const params = await request[typeParams]()
+            const dataValidate = new dto();
 
-        for (const key in params) {
-            if (Object.prototype.hasOwnProperty.call(params, key)) {
-                dataValidate[key] = params[key];
+            Object.assign(dataValidate,params)
+
+            const errors: ValidationError[] = await validate(dataValidate);
+            if (errors.length > 0) {
+                const dataError: ErrorValidation = {
+                    field: errors[0]?.property,
+                    detail: errors[0]?.constraints
+                };
+                const error = new CustomError<ErrorValidation>({
+                    code: StatusCodes.BAD_REQUEST,
+                    message: "Validation Failed",
+                    detail_error: dataError
+                });
+                return c.json(error,500)
+            }else{
+                c.set("requestParams", params)
+                await next()
             }
-        }
-
-        const errors: ValidationError[] = await validate(dataValidate);
-        if (errors.length > 0) {
-            const dataError: ErrorValidation = {
-                field: errors[0]?.property,
-                detail: errors[0]?.constraints
-            };
-            const error = new CustomError<ErrorValidation>({
-                code: StatusCodes.BAD_REQUEST,
-                message: "Validation Failed",
-                detail_error: dataError,
-                key_error: "P100"
-            });
-            return c.json(dataError,500)
-        }else{
-            c.set("requestParams", params)
-            await next()
+        }catch (e) {
+            return c.json("Internal Error",500)
         }
     }
 }

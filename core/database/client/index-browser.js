@@ -95,6 +95,17 @@ exports.Prisma.JsonNullValueFilter = makeEnum({
   AnyNull: Prisma.AnyNull
 });
 
+exports.Prisma.MonitoringScalarFieldEnum = makeEnum({
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  detail: 'detail',
+  isActive: 'isActive',
+  isDelete: 'isDelete',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+});
+
 exports.Prisma.NullableJsonNullValueInput = makeEnum({
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull
@@ -103,6 +114,21 @@ exports.Prisma.NullableJsonNullValueInput = makeEnum({
 exports.Prisma.QueryMode = makeEnum({
   default: 'default',
   insensitive: 'insensitive'
+});
+
+exports.Prisma.SessionScalarFieldEnum = makeEnum({
+  id: 'id',
+  refreshToken: 'refreshToken',
+  sign: 'sign',
+  userId: 'userId',
+  ip: 'ip',
+  location: 'location',
+  device: 'device',
+  expireAt: 'expireAt',
+  isActive: 'isActive',
+  isDelete: 'isDelete',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 });
 
 exports.Prisma.SortOrder = makeEnum({
@@ -131,8 +157,14 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 
 exports.Prisma.UserScalarFieldEnum = makeEnum({
   id: 'id',
-  domain: 'domain',
+  userName: 'userName',
+  email: 'email',
+  firstName: 'firstName',
+  surName: 'surName',
   fullName: 'fullName',
+  gender: 'gender',
+  birth: 'birth',
+  avatar: 'avatar',
   information: 'information',
   password: 'password',
   isActive: 'isActive',
@@ -146,6 +178,18 @@ exports.DestinationThread = makeEnum({
   FRIEND: 'FRIEND'
 });
 
+exports.Gender = makeEnum({
+  MALE: 'MALE',
+  FEMALE: 'FEMALE',
+  CUSTOM: 'CUSTOM'
+});
+
+exports.LogType = makeEnum({
+  LOGIN: 'LOGIN',
+  REFRESH_TOKEN: 'REFRESH_TOKEN',
+  LOGOUT: 'LOGOUT'
+});
+
 exports.ThreadPrivacy = makeEnum({
   PUBLIC: 'PUBLIC',
   PRIVATE: 'PRIVATE'
@@ -153,7 +197,9 @@ exports.ThreadPrivacy = makeEnum({
 
 exports.Prisma.ModelName = makeEnum({
   User: 'User',
-  Thread: 'Thread'
+  Thread: 'Thread',
+  Session: 'Session',
+  Monitoring: 'Monitoring'
 });
 
 /**
