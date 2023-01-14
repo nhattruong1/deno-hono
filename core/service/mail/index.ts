@@ -1,6 +1,5 @@
-import nodemailer from "npm:nodemailer@6.9.0"
+import nodemailer from "npm:nodemailer"
 import { config } from "https://deno.land/x/dotenv@v3.2.0/mod.ts";
-import fa from "https://deno.land/x/deno_libphonenumber@v1.9.20/index.js";
 
 const env = config();
 
