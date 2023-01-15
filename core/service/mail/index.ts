@@ -7,7 +7,8 @@ interface informationMail{
     html: string,
 }
 const client = new SmtpClient();
-
+console.log(Deno.env.get("EMAIL_DOMAIN"))
+console.log(Deno.env.get("EMAIL_APP_PASSWORD"))
 await client.connectTLS({
     hostname: "smtp.gmail.com",
     port: 465,
