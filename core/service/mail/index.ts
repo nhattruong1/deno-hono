@@ -1,6 +1,4 @@
 import { SMTPClient } from "https://deno.land/x/denomailer/mod.ts";
-import { config } from "https://deno.land/x/dotenv@v3.2.0/mod.ts";
-const env = config();
 
 interface informationMail{
     to: string,
@@ -15,15 +13,15 @@ const client = new SMTPClient({
         port: 465,
         tls: true,
         auth: {
-            username: env.EMAIL_DOMAIN,
-            password: env.EMAIL_APP_PASSWORD,
+            username: Deno.env.get("EMAIL_DOMAIN"),
+            password: Deno.env.get("EMAIL_APP_PASSWORD"),
         }
     }
 });
 
 export async function sendMail() {
     await client.send({
-        from: env.EMAIL_DOMAIN,
+        from: Deno.env.get("EMAIL_DOMAIN"),
         to: "truongvo.dev@gmail.com", // list of receivers
         subject: "Hello ✔", // Subject line
          content: "Hello world?", // plain text body
