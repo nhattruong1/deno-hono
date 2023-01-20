@@ -36,6 +36,7 @@ export function validation(dto: any,typeParams: ParamType) {
                 await next()
             }
         }catch (e) {
+            console.log(e)
             return c.json("Internal Error",500)
         }
     }
