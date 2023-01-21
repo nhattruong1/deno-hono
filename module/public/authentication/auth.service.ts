@@ -7,10 +7,11 @@ import {create, getNumericDate} from "https://deno.land/x/djwt@v2.8/mod.ts";
 import {KEY_ACCESS_TOKEN, KEY_REFRESH_TOKEN} from "../../../utils/jwt.key.ts";
 import {logging} from "../../../core/helper/storage/index.ts";
 import {LogType} from "../../../core/helper/enum/index.ts";
+import {compare, hash} from "../../../core/helper/function/index.ts";
 
 export async function register(params: RegisterDTO){
     const salt = await bcrypt.genSalt(12);
-    params.password = await bcrypt.hash(params.password,salt)
+    params.password = await hash(params.password,salt)
     const checkExistEmail = await findUserByAttribute('email',params.email)
     if(checkExistEmail){
         return new CustomError<string>({
@@ -37,7 +38,7 @@ export async function login(params: LoginDTO){
         })
     }
 
-    const isMatchPassword = await bcrypt.compare(params.password, userLogin.password);
+    const isMatchPassword = await compare(params.password, userLogin.password);
 
     if(!isMatchPassword){
         return new CustomError<string>({

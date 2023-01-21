@@ -1,5 +1,4 @@
 import {loadENV} from "./env.ts";
-
 loadENV()
 const encoder = new TextEncoder()
 const SUP_ACCESS_TOKEN = encoder.encode(Deno.env.get("SECRET_JWT_ACCESS_TOKEN"));
