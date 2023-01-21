@@ -1,6 +1,4 @@
 import {Redis} from "https://deno.land/x/upstash_redis@v1.19.1/mod.ts";
-import {loadENV} from "../../../utils/env.ts";
-loadENV()
 
 export const RedisClient = (() => {
     let instance: any;

@@ -1,6 +1,4 @@
 import { PrismaClient } from './client/deno/edge.ts'
-import {loadENV} from "../../utils/env.ts";
-loadENV()
 
 export const Prisma = (() => {
     let instance: PrismaClient;

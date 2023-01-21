@@ -3,6 +3,7 @@ import {Context, Hono} from 'https://deno.land/x/hono@v2.6.2/mod.ts'
 import {publicRouter} from "./module/public/public.controller.ts";
 import {Prisma} from "./core/database/index.ts";
 import {RedisClient} from "./core/service/caching/index.ts";
+import "https://deno.land/std@0.173.0/dotenv/load.ts";
 
 const app = new Hono();
 Prisma.getInstance()
