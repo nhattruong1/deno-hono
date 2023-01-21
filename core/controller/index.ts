@@ -1,5 +1,6 @@
 import {Context} from "https://deno.land/x/hono@v2.6.2/context.ts";
 import {Error} from "../errorHandling/index.ts";
+import {getReasonPhrase, StatusCodes} from "https://deno.land/x/https_status_codes@v1.2.0/mod.ts";
 
 async function _executeHandler(c: Context) {
     try {
@@ -14,7 +15,11 @@ async function _executeHandler(c: Context) {
         if(result instanceof Error){
             return c.json(result, result.code)
         }
-        return c.json(result,200)
+        return c.json({
+            code: StatusCodes.OK,
+            message:getReasonPhrase(StatusCodes.OK),
+            data: result
+        },200)
     } catch (e) {
         console.log(e)
         return c.json("Internal Error",500)
