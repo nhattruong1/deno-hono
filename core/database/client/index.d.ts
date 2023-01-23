@@ -26,8 +26,39 @@ export type User = {
   gender: Gender | null
   birth: Date | null
   avatar: string | null
+  cover: string | null
   information: Prisma.JsonValue | null
   password: string
+  isActive: boolean
+  isDelete: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Model relationship
+ * 
+ */
+export type relationship = {
+  id: number
+  content: string
+  userId: number | null
+  friendId: number | null
+  relationType: RelationType
+  isActive: boolean
+  isDelete: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Model userThreads
+ * 
+ */
+export type userThreads = {
+  id: number
+  userId: number | null
+  threadId: number | null
   isActive: boolean
   isDelete: boolean
   createdAt: Date
@@ -41,9 +72,58 @@ export type User = {
 export type Thread = {
   id: number
   content: string
+  totalReact: number | null
+  totalComment: number | null
   authorId: number | null
   privacy: ThreadPrivacy
   destination: DestinationThread
+  isActive: boolean
+  isDelete: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Model threadAttachments
+ * 
+ */
+export type threadAttachments = {
+  id: number
+  link: string
+  type: AttachmentType
+  threadId: number | null
+  isActive: boolean
+  isDelete: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Model reaction
+ * 
+ */
+export type reaction = {
+  id: number
+  react: ReactType
+  threadId: number | null
+  commentId: number | null
+  userId: number | null
+  isActive: boolean
+  isDelete: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+/**
+ * Model Comment
+ * 
+ */
+export type Comment = {
+  id: number
+  content: string
+  threadId: number | null
+  userId: number | null
+  parentId: number | null
   isActive: boolean
   isDelete: boolean
   createdAt: Date
@@ -92,6 +172,16 @@ export type Monitoring = {
 // Based on
 // https://github.com/microsoft/TypeScript/issues/3192#issuecomment-261720275
 
+export const AttachmentType: {
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO',
+  DOCUMENT: 'DOCUMENT',
+  OTHER_FILE: 'OTHER_FILE'
+};
+
+export type AttachmentType = (typeof AttachmentType)[keyof typeof AttachmentType]
+
+
 export const DestinationThread: {
   GROUP: 'GROUP',
   PERSONAL: 'PERSONAL',
@@ -117,6 +207,27 @@ export const LogType: {
 };
 
 export type LogType = (typeof LogType)[keyof typeof LogType]
+
+
+export const ReactType: {
+  LIKE: 'LIKE',
+  HAHA: 'HAHA',
+  LOVE: 'LOVE',
+  SAD: 'SAD',
+  ANGRY: 'ANGRY',
+  WOW: 'WOW'
+};
+
+export type ReactType = (typeof ReactType)[keyof typeof ReactType]
+
+
+export const RelationType: {
+  FOLLOW: 'FOLLOW',
+  FRIEND: 'FRIEND',
+  BLOCK: 'BLOCK'
+};
+
+export type RelationType = (typeof RelationType)[keyof typeof RelationType]
 
 
 export const ThreadPrivacy: {
@@ -255,6 +366,26 @@ export class PrismaClient<
   get user(): Prisma.UserDelegate<GlobalReject>;
 
   /**
+   * `prisma.relationship`: Exposes CRUD operations for the **relationship** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Relationships
+    * const relationships = await prisma.relationship.findMany()
+    * ```
+    */
+  get relationship(): Prisma.relationshipDelegate<GlobalReject>;
+
+  /**
+   * `prisma.userThreads`: Exposes CRUD operations for the **userThreads** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more UserThreads
+    * const userThreads = await prisma.userThreads.findMany()
+    * ```
+    */
+  get userThreads(): Prisma.userThreadsDelegate<GlobalReject>;
+
+  /**
    * `prisma.thread`: Exposes CRUD operations for the **Thread** model.
     * Example usage:
     * ```ts
@@ -263,6 +394,36 @@ export class PrismaClient<
     * ```
     */
   get thread(): Prisma.ThreadDelegate<GlobalReject>;
+
+  /**
+   * `prisma.threadAttachments`: Exposes CRUD operations for the **threadAttachments** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ThreadAttachments
+    * const threadAttachments = await prisma.threadAttachments.findMany()
+    * ```
+    */
+  get threadAttachments(): Prisma.threadAttachmentsDelegate<GlobalReject>;
+
+  /**
+   * `prisma.reaction`: Exposes CRUD operations for the **reaction** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Reactions
+    * const reactions = await prisma.reaction.findMany()
+    * ```
+    */
+  get reaction(): Prisma.reactionDelegate<GlobalReject>;
+
+  /**
+   * `prisma.comment`: Exposes CRUD operations for the **Comment** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Comments
+    * const comments = await prisma.comment.findMany()
+    * ```
+    */
+  get comment(): Prisma.CommentDelegate<GlobalReject>;
 
   /**
    * `prisma.session`: Exposes CRUD operations for the **Session** model.
@@ -768,7 +929,12 @@ export namespace Prisma {
 
   export const ModelName: {
     User: 'User',
+    relationship: 'relationship',
+    userThreads: 'userThreads',
     Thread: 'Thread',
+    threadAttachments: 'threadAttachments',
+    reaction: 'reaction',
+    Comment: 'Comment',
     Session: 'Session',
     Monitoring: 'Monitoring'
   };
@@ -943,13 +1109,23 @@ export namespace Prisma {
   export type UserCountOutputType = {
     threadCreated: number
     session: number
+    user: number
+    relations: number
     monitoring: number
+    userThreads: number
+    reaction: number
+    Comment: number
   }
 
   export type UserCountOutputTypeSelect = {
     threadCreated?: boolean
     session?: boolean
+    user?: boolean
+    relations?: boolean
     monitoring?: boolean
+    userThreads?: boolean
+    reaction?: boolean
+    Comment?: boolean
   }
 
   export type UserCountOutputTypeGetPayload<S extends boolean | null | undefined | UserCountOutputTypeArgs> =
@@ -979,6 +1155,102 @@ export namespace Prisma {
      * 
     **/
     select?: UserCountOutputTypeSelect | null
+  }
+
+
+
+  /**
+   * Count Type ThreadCountOutputType
+   */
+
+
+  export type ThreadCountOutputType = {
+    user: number
+    attachment: number
+    reaction: number
+    Comment: number
+  }
+
+  export type ThreadCountOutputTypeSelect = {
+    user?: boolean
+    attachment?: boolean
+    reaction?: boolean
+    Comment?: boolean
+  }
+
+  export type ThreadCountOutputTypeGetPayload<S extends boolean | null | undefined | ThreadCountOutputTypeArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? ThreadCountOutputType :
+    S extends undefined ? never :
+    S extends { include: any } & (ThreadCountOutputTypeArgs)
+    ? ThreadCountOutputType 
+    : S extends { select: any } & (ThreadCountOutputTypeArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+    P extends keyof ThreadCountOutputType ? ThreadCountOutputType[P] : never
+  } 
+      : ThreadCountOutputType
+
+
+
+
+  // Custom InputTypes
+
+  /**
+   * ThreadCountOutputType without action
+   */
+  export type ThreadCountOutputTypeArgs = {
+    /**
+     * Select specific fields to fetch from the ThreadCountOutputType
+     * 
+    **/
+    select?: ThreadCountOutputTypeSelect | null
+  }
+
+
+
+  /**
+   * Count Type CommentCountOutputType
+   */
+
+
+  export type CommentCountOutputType = {
+    children: number
+    reaction: number
+  }
+
+  export type CommentCountOutputTypeSelect = {
+    children?: boolean
+    reaction?: boolean
+  }
+
+  export type CommentCountOutputTypeGetPayload<S extends boolean | null | undefined | CommentCountOutputTypeArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? CommentCountOutputType :
+    S extends undefined ? never :
+    S extends { include: any } & (CommentCountOutputTypeArgs)
+    ? CommentCountOutputType 
+    : S extends { select: any } & (CommentCountOutputTypeArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+    P extends keyof CommentCountOutputType ? CommentCountOutputType[P] : never
+  } 
+      : CommentCountOutputType
+
+
+
+
+  // Custom InputTypes
+
+  /**
+   * CommentCountOutputType without action
+   */
+  export type CommentCountOutputTypeArgs = {
+    /**
+     * Select specific fields to fetch from the CommentCountOutputType
+     * 
+    **/
+    select?: CommentCountOutputTypeSelect | null
   }
 
 
@@ -1018,6 +1290,7 @@ export namespace Prisma {
     gender: Gender | null
     birth: Date | null
     avatar: string | null
+    cover: string | null
     password: string | null
     isActive: boolean | null
     isDelete: boolean | null
@@ -1035,6 +1308,7 @@ export namespace Prisma {
     gender: Gender | null
     birth: Date | null
     avatar: string | null
+    cover: string | null
     password: string | null
     isActive: boolean | null
     isDelete: boolean | null
@@ -1052,6 +1326,7 @@ export namespace Prisma {
     gender: number
     birth: number
     avatar: number
+    cover: number
     information: number
     password: number
     isActive: number
@@ -1080,6 +1355,7 @@ export namespace Prisma {
     gender?: true
     birth?: true
     avatar?: true
+    cover?: true
     password?: true
     isActive?: true
     isDelete?: true
@@ -1097,6 +1373,7 @@ export namespace Prisma {
     gender?: true
     birth?: true
     avatar?: true
+    cover?: true
     password?: true
     isActive?: true
     isDelete?: true
@@ -1114,6 +1391,7 @@ export namespace Prisma {
     gender?: true
     birth?: true
     avatar?: true
+    cover?: true
     information?: true
     password?: true
     isActive?: true
@@ -1225,6 +1503,7 @@ export namespace Prisma {
     gender: Gender | null
     birth: Date | null
     avatar: string | null
+    cover: string | null
     information: JsonValue | null
     password: string
     isActive: boolean
@@ -1262,6 +1541,7 @@ export namespace Prisma {
     gender?: boolean
     birth?: boolean
     avatar?: boolean
+    cover?: boolean
     information?: boolean
     password?: boolean
     threadCreated?: boolean | UserThreadCreatedArgs
@@ -1270,7 +1550,12 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     session?: boolean | UserSessionArgs
+    user?: boolean | UserUserArgs
+    relations?: boolean | UserRelationsArgs
     monitoring?: boolean | UserMonitoringArgs
+    userThreads?: boolean | UserUserThreadsArgs
+    reaction?: boolean | UserReactionArgs
+    Comment?: boolean | UserCommentArgs
     _count?: boolean | UserCountOutputTypeArgs
   }
 
@@ -1278,7 +1563,12 @@ export namespace Prisma {
   export type UserInclude = {
     threadCreated?: boolean | UserThreadCreatedArgs
     session?: boolean | UserSessionArgs
+    user?: boolean | UserUserArgs
+    relations?: boolean | UserRelationsArgs
     monitoring?: boolean | UserMonitoringArgs
+    userThreads?: boolean | UserUserThreadsArgs
+    reaction?: boolean | UserReactionArgs
+    Comment?: boolean | UserCommentArgs
     _count?: boolean | UserCountOutputTypeArgs
   } 
 
@@ -1291,7 +1581,12 @@ export namespace Prisma {
     [P in TruthyKeys<S['include']>]:
         P extends 'threadCreated' ? Array < ThreadGetPayload<S['include'][P]>>  :
         P extends 'session' ? Array < SessionGetPayload<S['include'][P]>>  :
+        P extends 'user' ? Array < relationshipGetPayload<S['include'][P]>>  :
+        P extends 'relations' ? Array < relationshipGetPayload<S['include'][P]>>  :
         P extends 'monitoring' ? Array < MonitoringGetPayload<S['include'][P]>>  :
+        P extends 'userThreads' ? Array < userThreadsGetPayload<S['include'][P]>>  :
+        P extends 'reaction' ? Array < reactionGetPayload<S['include'][P]>>  :
+        P extends 'Comment' ? Array < CommentGetPayload<S['include'][P]>>  :
         P extends '_count' ? UserCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : S extends { select: any } & (UserArgs | UserFindManyArgs)
@@ -1299,7 +1594,12 @@ export namespace Prisma {
     [P in TruthyKeys<S['select']>]:
         P extends 'threadCreated' ? Array < ThreadGetPayload<S['select'][P]>>  :
         P extends 'session' ? Array < SessionGetPayload<S['select'][P]>>  :
+        P extends 'user' ? Array < relationshipGetPayload<S['select'][P]>>  :
+        P extends 'relations' ? Array < relationshipGetPayload<S['select'][P]>>  :
         P extends 'monitoring' ? Array < MonitoringGetPayload<S['select'][P]>>  :
+        P extends 'userThreads' ? Array < userThreadsGetPayload<S['select'][P]>>  :
+        P extends 'reaction' ? Array < reactionGetPayload<S['select'][P]>>  :
+        P extends 'Comment' ? Array < CommentGetPayload<S['select'][P]>>  :
         P extends '_count' ? UserCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof User ? User[P] : never
   } 
       : User
@@ -1678,7 +1978,17 @@ export namespace Prisma {
 
     session<T extends UserSessionArgs= {}>(args?: Subset<T, UserSessionArgs>): PrismaPromise<Array<SessionGetPayload<T>>| Null>;
 
+    user<T extends UserUserArgs= {}>(args?: Subset<T, UserUserArgs>): PrismaPromise<Array<relationshipGetPayload<T>>| Null>;
+
+    relations<T extends UserRelationsArgs= {}>(args?: Subset<T, UserRelationsArgs>): PrismaPromise<Array<relationshipGetPayload<T>>| Null>;
+
     monitoring<T extends UserMonitoringArgs= {}>(args?: Subset<T, UserMonitoringArgs>): PrismaPromise<Array<MonitoringGetPayload<T>>| Null>;
+
+    userThreads<T extends UserUserThreadsArgs= {}>(args?: Subset<T, UserUserThreadsArgs>): PrismaPromise<Array<userThreadsGetPayload<T>>| Null>;
+
+    reaction<T extends UserReactionArgs= {}>(args?: Subset<T, UserReactionArgs>): PrismaPromise<Array<reactionGetPayload<T>>| Null>;
+
+    Comment<T extends UserCommentArgs= {}>(args?: Subset<T, UserCommentArgs>): PrismaPromise<Array<CommentGetPayload<T>>| Null>;
 
     private get _document();
     /**
@@ -2130,6 +2440,52 @@ export namespace Prisma {
 
 
   /**
+   * User.user
+   */
+  export type UserUserArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    where?: relationshipWhereInput
+    orderBy?: Enumerable<relationshipOrderByWithRelationInput>
+    cursor?: relationshipWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<RelationshipScalarFieldEnum>
+  }
+
+
+  /**
+   * User.relations
+   */
+  export type UserRelationsArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    where?: relationshipWhereInput
+    orderBy?: Enumerable<relationshipOrderByWithRelationInput>
+    cursor?: relationshipWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<RelationshipScalarFieldEnum>
+  }
+
+
+  /**
    * User.monitoring
    */
   export type UserMonitoringArgs = {
@@ -2153,6 +2509,75 @@ export namespace Prisma {
 
 
   /**
+   * User.userThreads
+   */
+  export type UserUserThreadsArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    where?: userThreadsWhereInput
+    orderBy?: Enumerable<userThreadsOrderByWithRelationInput>
+    cursor?: userThreadsWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<UserThreadsScalarFieldEnum>
+  }
+
+
+  /**
+   * User.reaction
+   */
+  export type UserReactionArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    where?: reactionWhereInput
+    orderBy?: Enumerable<reactionOrderByWithRelationInput>
+    cursor?: reactionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<ReactionScalarFieldEnum>
+  }
+
+
+  /**
+   * User.Comment
+   */
+  export type UserCommentArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    where?: CommentWhereInput
+    orderBy?: Enumerable<CommentOrderByWithRelationInput>
+    cursor?: CommentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<CommentScalarFieldEnum>
+  }
+
+
+  /**
    * User without action
    */
   export type UserArgs = {
@@ -2166,6 +2591,2126 @@ export namespace Prisma {
      * 
     **/
     include?: UserInclude | null
+  }
+
+
+
+  /**
+   * Model relationship
+   */
+
+
+  export type AggregateRelationship = {
+    _count: RelationshipCountAggregateOutputType | null
+    _avg: RelationshipAvgAggregateOutputType | null
+    _sum: RelationshipSumAggregateOutputType | null
+    _min: RelationshipMinAggregateOutputType | null
+    _max: RelationshipMaxAggregateOutputType | null
+  }
+
+  export type RelationshipAvgAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    friendId: number | null
+  }
+
+  export type RelationshipSumAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    friendId: number | null
+  }
+
+  export type RelationshipMinAggregateOutputType = {
+    id: number | null
+    content: string | null
+    userId: number | null
+    friendId: number | null
+    relationType: RelationType | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type RelationshipMaxAggregateOutputType = {
+    id: number | null
+    content: string | null
+    userId: number | null
+    friendId: number | null
+    relationType: RelationType | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type RelationshipCountAggregateOutputType = {
+    id: number
+    content: number
+    userId: number
+    friendId: number
+    relationType: number
+    isActive: number
+    isDelete: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type RelationshipAvgAggregateInputType = {
+    id?: true
+    userId?: true
+    friendId?: true
+  }
+
+  export type RelationshipSumAggregateInputType = {
+    id?: true
+    userId?: true
+    friendId?: true
+  }
+
+  export type RelationshipMinAggregateInputType = {
+    id?: true
+    content?: true
+    userId?: true
+    friendId?: true
+    relationType?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type RelationshipMaxAggregateInputType = {
+    id?: true
+    content?: true
+    userId?: true
+    friendId?: true
+    relationType?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type RelationshipCountAggregateInputType = {
+    id?: true
+    content?: true
+    userId?: true
+    friendId?: true
+    relationType?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type RelationshipAggregateArgs = {
+    /**
+     * Filter which relationship to aggregate.
+     * 
+    **/
+    where?: relationshipWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of relationships to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<relationshipOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     * 
+    **/
+    cursor?: relationshipWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` relationships from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` relationships.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned relationships
+    **/
+    _count?: true | RelationshipCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: RelationshipAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: RelationshipSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: RelationshipMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: RelationshipMaxAggregateInputType
+  }
+
+  export type GetRelationshipAggregateType<T extends RelationshipAggregateArgs> = {
+        [P in keyof T & keyof AggregateRelationship]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateRelationship[P]>
+      : GetScalarType<T[P], AggregateRelationship[P]>
+  }
+
+
+
+
+  export type RelationshipGroupByArgs = {
+    where?: relationshipWhereInput
+    orderBy?: Enumerable<relationshipOrderByWithAggregationInput>
+    by: Array<RelationshipScalarFieldEnum>
+    having?: relationshipScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: RelationshipCountAggregateInputType | true
+    _avg?: RelationshipAvgAggregateInputType
+    _sum?: RelationshipSumAggregateInputType
+    _min?: RelationshipMinAggregateInputType
+    _max?: RelationshipMaxAggregateInputType
+  }
+
+
+  export type RelationshipGroupByOutputType = {
+    id: number
+    content: string
+    userId: number | null
+    friendId: number | null
+    relationType: RelationType
+    isActive: boolean
+    isDelete: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: RelationshipCountAggregateOutputType | null
+    _avg: RelationshipAvgAggregateOutputType | null
+    _sum: RelationshipSumAggregateOutputType | null
+    _min: RelationshipMinAggregateOutputType | null
+    _max: RelationshipMaxAggregateOutputType | null
+  }
+
+  type GetRelationshipGroupByPayload<T extends RelationshipGroupByArgs> = PrismaPromise<
+    Array<
+      PickArray<RelationshipGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof RelationshipGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], RelationshipGroupByOutputType[P]>
+            : GetScalarType<T[P], RelationshipGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type relationshipSelect = {
+    id?: boolean
+    content?: boolean
+    userId?: boolean
+    friendId?: boolean
+    user?: boolean | UserArgs
+    friend?: boolean | UserArgs
+    relationType?: boolean
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type relationshipInclude = {
+    user?: boolean | UserArgs
+    friend?: boolean | UserArgs
+  } 
+
+  export type relationshipGetPayload<S extends boolean | null | undefined | relationshipArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? relationship :
+    S extends undefined ? never :
+    S extends { include: any } & (relationshipArgs | relationshipFindManyArgs)
+    ? relationship  & {
+    [P in TruthyKeys<S['include']>]:
+        P extends 'user' ? UserGetPayload<S['include'][P]> | null :
+        P extends 'friend' ? UserGetPayload<S['include'][P]> | null :  never
+  } 
+    : S extends { select: any } & (relationshipArgs | relationshipFindManyArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+        P extends 'user' ? UserGetPayload<S['select'][P]> | null :
+        P extends 'friend' ? UserGetPayload<S['select'][P]> | null :  P extends keyof relationship ? relationship[P] : never
+  } 
+      : relationship
+
+
+  type relationshipCountArgs = Merge<
+    Omit<relationshipFindManyArgs, 'select' | 'include'> & {
+      select?: RelationshipCountAggregateInputType | true
+    }
+  >
+
+  export interface relationshipDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
+    /**
+     * Find zero or one Relationship that matches the filter.
+     * @param {relationshipFindUniqueArgs} args - Arguments to find a Relationship
+     * @example
+     * // Get one Relationship
+     * const relationship = await prisma.relationship.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends relationshipFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args: SelectSubset<T, relationshipFindUniqueArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'relationship'> extends True ? Prisma__relationshipClient<relationshipGetPayload<T>> : Prisma__relationshipClient<relationshipGetPayload<T> | null, null>
+
+    /**
+     * Find one Relationship that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {relationshipFindUniqueOrThrowArgs} args - Arguments to find a Relationship
+     * @example
+     * // Get one Relationship
+     * const relationship = await prisma.relationship.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends relationshipFindUniqueOrThrowArgs>(
+      args?: SelectSubset<T, relationshipFindUniqueOrThrowArgs>
+    ): Prisma__relationshipClient<relationshipGetPayload<T>>
+
+    /**
+     * Find the first Relationship that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {relationshipFindFirstArgs} args - Arguments to find a Relationship
+     * @example
+     * // Get one Relationship
+     * const relationship = await prisma.relationship.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends relationshipFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args?: SelectSubset<T, relationshipFindFirstArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'relationship'> extends True ? Prisma__relationshipClient<relationshipGetPayload<T>> : Prisma__relationshipClient<relationshipGetPayload<T> | null, null>
+
+    /**
+     * Find the first Relationship that matches the filter or
+     * throw `NotFoundError` if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {relationshipFindFirstOrThrowArgs} args - Arguments to find a Relationship
+     * @example
+     * // Get one Relationship
+     * const relationship = await prisma.relationship.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends relationshipFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, relationshipFindFirstOrThrowArgs>
+    ): Prisma__relationshipClient<relationshipGetPayload<T>>
+
+    /**
+     * Find zero or more Relationships that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {relationshipFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Relationships
+     * const relationships = await prisma.relationship.findMany()
+     * 
+     * // Get first 10 Relationships
+     * const relationships = await prisma.relationship.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const relationshipWithIdOnly = await prisma.relationship.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends relationshipFindManyArgs>(
+      args?: SelectSubset<T, relationshipFindManyArgs>
+    ): PrismaPromise<Array<relationshipGetPayload<T>>>
+
+    /**
+     * Create a Relationship.
+     * @param {relationshipCreateArgs} args - Arguments to create a Relationship.
+     * @example
+     * // Create one Relationship
+     * const Relationship = await prisma.relationship.create({
+     *   data: {
+     *     // ... data to create a Relationship
+     *   }
+     * })
+     * 
+    **/
+    create<T extends relationshipCreateArgs>(
+      args: SelectSubset<T, relationshipCreateArgs>
+    ): Prisma__relationshipClient<relationshipGetPayload<T>>
+
+    /**
+     * Create many Relationships.
+     *     @param {relationshipCreateManyArgs} args - Arguments to create many Relationships.
+     *     @example
+     *     // Create many Relationships
+     *     const relationship = await prisma.relationship.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends relationshipCreateManyArgs>(
+      args?: SelectSubset<T, relationshipCreateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Relationship.
+     * @param {relationshipDeleteArgs} args - Arguments to delete one Relationship.
+     * @example
+     * // Delete one Relationship
+     * const Relationship = await prisma.relationship.delete({
+     *   where: {
+     *     // ... filter to delete one Relationship
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends relationshipDeleteArgs>(
+      args: SelectSubset<T, relationshipDeleteArgs>
+    ): Prisma__relationshipClient<relationshipGetPayload<T>>
+
+    /**
+     * Update one Relationship.
+     * @param {relationshipUpdateArgs} args - Arguments to update one Relationship.
+     * @example
+     * // Update one Relationship
+     * const relationship = await prisma.relationship.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends relationshipUpdateArgs>(
+      args: SelectSubset<T, relationshipUpdateArgs>
+    ): Prisma__relationshipClient<relationshipGetPayload<T>>
+
+    /**
+     * Delete zero or more Relationships.
+     * @param {relationshipDeleteManyArgs} args - Arguments to filter Relationships to delete.
+     * @example
+     * // Delete a few Relationships
+     * const { count } = await prisma.relationship.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends relationshipDeleteManyArgs>(
+      args?: SelectSubset<T, relationshipDeleteManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Relationships.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {relationshipUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Relationships
+     * const relationship = await prisma.relationship.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends relationshipUpdateManyArgs>(
+      args: SelectSubset<T, relationshipUpdateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Relationship.
+     * @param {relationshipUpsertArgs} args - Arguments to update or create a Relationship.
+     * @example
+     * // Update or create a Relationship
+     * const relationship = await prisma.relationship.upsert({
+     *   create: {
+     *     // ... data to create a Relationship
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Relationship we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends relationshipUpsertArgs>(
+      args: SelectSubset<T, relationshipUpsertArgs>
+    ): Prisma__relationshipClient<relationshipGetPayload<T>>
+
+    /**
+     * Count the number of Relationships.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {relationshipCountArgs} args - Arguments to filter Relationships to count.
+     * @example
+     * // Count the number of Relationships
+     * const count = await prisma.relationship.count({
+     *   where: {
+     *     // ... the filter for the Relationships we want to count
+     *   }
+     * })
+    **/
+    count<T extends relationshipCountArgs>(
+      args?: Subset<T, relationshipCountArgs>,
+    ): PrismaPromise<
+      T extends _Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], RelationshipCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Relationship.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelationshipAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends RelationshipAggregateArgs>(args: Subset<T, RelationshipAggregateArgs>): PrismaPromise<GetRelationshipAggregateType<T>>
+
+    /**
+     * Group by Relationship.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {RelationshipGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends RelationshipGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: RelationshipGroupByArgs['orderBy'] }
+        : { orderBy?: RelationshipGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends TupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, RelationshipGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetRelationshipGroupByPayload<T> : PrismaPromise<InputErrors>
+
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for relationship.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export class Prisma__relationshipClient<T, Null = never> implements PrismaPromise<T> {
+    [prisma]: true;
+    private readonly _dmmf;
+    private readonly _fetcher;
+    private readonly _queryType;
+    private readonly _rootField;
+    private readonly _clientMethod;
+    private readonly _args;
+    private readonly _dataPath;
+    private readonly _errorFormat;
+    private readonly _measurePerformance?;
+    private _isList;
+    private _callsite;
+    private _requestPromise?;
+    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
+    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
+
+    user<T extends UserArgs= {}>(args?: Subset<T, UserArgs>): Prisma__UserClient<UserGetPayload<T> | Null>;
+
+    friend<T extends UserArgs= {}>(args?: Subset<T, UserArgs>): Prisma__UserClient<UserGetPayload<T> | Null>;
+
+    private get _document();
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
+  }
+
+
+
+  // Custom InputTypes
+
+  /**
+   * relationship base type for findUnique actions
+   */
+  export type relationshipFindUniqueArgsBase = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * Filter, which relationship to fetch.
+     * 
+    **/
+    where: relationshipWhereUniqueInput
+  }
+
+  /**
+   * relationship findUnique
+   */
+  export interface relationshipFindUniqueArgs extends relationshipFindUniqueArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * relationship findUniqueOrThrow
+   */
+  export type relationshipFindUniqueOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * Filter, which relationship to fetch.
+     * 
+    **/
+    where: relationshipWhereUniqueInput
+  }
+
+
+  /**
+   * relationship base type for findFirst actions
+   */
+  export type relationshipFindFirstArgsBase = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * Filter, which relationship to fetch.
+     * 
+    **/
+    where?: relationshipWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of relationships to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<relationshipOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for relationships.
+     * 
+    **/
+    cursor?: relationshipWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` relationships from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` relationships.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of relationships.
+     * 
+    **/
+    distinct?: Enumerable<RelationshipScalarFieldEnum>
+  }
+
+  /**
+   * relationship findFirst
+   */
+  export interface relationshipFindFirstArgs extends relationshipFindFirstArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * relationship findFirstOrThrow
+   */
+  export type relationshipFindFirstOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * Filter, which relationship to fetch.
+     * 
+    **/
+    where?: relationshipWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of relationships to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<relationshipOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for relationships.
+     * 
+    **/
+    cursor?: relationshipWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` relationships from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` relationships.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of relationships.
+     * 
+    **/
+    distinct?: Enumerable<RelationshipScalarFieldEnum>
+  }
+
+
+  /**
+   * relationship findMany
+   */
+  export type relationshipFindManyArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * Filter, which relationships to fetch.
+     * 
+    **/
+    where?: relationshipWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of relationships to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<relationshipOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing relationships.
+     * 
+    **/
+    cursor?: relationshipWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` relationships from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` relationships.
+     * 
+    **/
+    skip?: number
+    distinct?: Enumerable<RelationshipScalarFieldEnum>
+  }
+
+
+  /**
+   * relationship create
+   */
+  export type relationshipCreateArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * The data needed to create a relationship.
+     * 
+    **/
+    data: XOR<relationshipCreateInput, relationshipUncheckedCreateInput>
+  }
+
+
+  /**
+   * relationship createMany
+   */
+  export type relationshipCreateManyArgs = {
+    /**
+     * The data used to create many relationships.
+     * 
+    **/
+    data: Enumerable<relationshipCreateManyInput>
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * relationship update
+   */
+  export type relationshipUpdateArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * The data needed to update a relationship.
+     * 
+    **/
+    data: XOR<relationshipUpdateInput, relationshipUncheckedUpdateInput>
+    /**
+     * Choose, which relationship to update.
+     * 
+    **/
+    where: relationshipWhereUniqueInput
+  }
+
+
+  /**
+   * relationship updateMany
+   */
+  export type relationshipUpdateManyArgs = {
+    /**
+     * The data used to update relationships.
+     * 
+    **/
+    data: XOR<relationshipUpdateManyMutationInput, relationshipUncheckedUpdateManyInput>
+    /**
+     * Filter which relationships to update
+     * 
+    **/
+    where?: relationshipWhereInput
+  }
+
+
+  /**
+   * relationship upsert
+   */
+  export type relationshipUpsertArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * The filter to search for the relationship to update in case it exists.
+     * 
+    **/
+    where: relationshipWhereUniqueInput
+    /**
+     * In case the relationship found by the `where` argument doesn't exist, create a new relationship with this data.
+     * 
+    **/
+    create: XOR<relationshipCreateInput, relationshipUncheckedCreateInput>
+    /**
+     * In case the relationship was found with the provided `where` argument, update it with this data.
+     * 
+    **/
+    update: XOR<relationshipUpdateInput, relationshipUncheckedUpdateInput>
+  }
+
+
+  /**
+   * relationship delete
+   */
+  export type relationshipDeleteArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+    /**
+     * Filter which relationship to delete.
+     * 
+    **/
+    where: relationshipWhereUniqueInput
+  }
+
+
+  /**
+   * relationship deleteMany
+   */
+  export type relationshipDeleteManyArgs = {
+    /**
+     * Filter which relationships to delete
+     * 
+    **/
+    where?: relationshipWhereInput
+  }
+
+
+  /**
+   * relationship without action
+   */
+  export type relationshipArgs = {
+    /**
+     * Select specific fields to fetch from the relationship
+     * 
+    **/
+    select?: relationshipSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: relationshipInclude | null
+  }
+
+
+
+  /**
+   * Model userThreads
+   */
+
+
+  export type AggregateUserThreads = {
+    _count: UserThreadsCountAggregateOutputType | null
+    _avg: UserThreadsAvgAggregateOutputType | null
+    _sum: UserThreadsSumAggregateOutputType | null
+    _min: UserThreadsMinAggregateOutputType | null
+    _max: UserThreadsMaxAggregateOutputType | null
+  }
+
+  export type UserThreadsAvgAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    threadId: number | null
+  }
+
+  export type UserThreadsSumAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    threadId: number | null
+  }
+
+  export type UserThreadsMinAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    threadId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type UserThreadsMaxAggregateOutputType = {
+    id: number | null
+    userId: number | null
+    threadId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type UserThreadsCountAggregateOutputType = {
+    id: number
+    userId: number
+    threadId: number
+    isActive: number
+    isDelete: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type UserThreadsAvgAggregateInputType = {
+    id?: true
+    userId?: true
+    threadId?: true
+  }
+
+  export type UserThreadsSumAggregateInputType = {
+    id?: true
+    userId?: true
+    threadId?: true
+  }
+
+  export type UserThreadsMinAggregateInputType = {
+    id?: true
+    userId?: true
+    threadId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type UserThreadsMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    threadId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type UserThreadsCountAggregateInputType = {
+    id?: true
+    userId?: true
+    threadId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type UserThreadsAggregateArgs = {
+    /**
+     * Filter which userThreads to aggregate.
+     * 
+    **/
+    where?: userThreadsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of userThreads to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<userThreadsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     * 
+    **/
+    cursor?: userThreadsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` userThreads from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` userThreads.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned userThreads
+    **/
+    _count?: true | UserThreadsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: UserThreadsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: UserThreadsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: UserThreadsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: UserThreadsMaxAggregateInputType
+  }
+
+  export type GetUserThreadsAggregateType<T extends UserThreadsAggregateArgs> = {
+        [P in keyof T & keyof AggregateUserThreads]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateUserThreads[P]>
+      : GetScalarType<T[P], AggregateUserThreads[P]>
+  }
+
+
+
+
+  export type UserThreadsGroupByArgs = {
+    where?: userThreadsWhereInput
+    orderBy?: Enumerable<userThreadsOrderByWithAggregationInput>
+    by: Array<UserThreadsScalarFieldEnum>
+    having?: userThreadsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: UserThreadsCountAggregateInputType | true
+    _avg?: UserThreadsAvgAggregateInputType
+    _sum?: UserThreadsSumAggregateInputType
+    _min?: UserThreadsMinAggregateInputType
+    _max?: UserThreadsMaxAggregateInputType
+  }
+
+
+  export type UserThreadsGroupByOutputType = {
+    id: number
+    userId: number | null
+    threadId: number | null
+    isActive: boolean
+    isDelete: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: UserThreadsCountAggregateOutputType | null
+    _avg: UserThreadsAvgAggregateOutputType | null
+    _sum: UserThreadsSumAggregateOutputType | null
+    _min: UserThreadsMinAggregateOutputType | null
+    _max: UserThreadsMaxAggregateOutputType | null
+  }
+
+  type GetUserThreadsGroupByPayload<T extends UserThreadsGroupByArgs> = PrismaPromise<
+    Array<
+      PickArray<UserThreadsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof UserThreadsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], UserThreadsGroupByOutputType[P]>
+            : GetScalarType<T[P], UserThreadsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type userThreadsSelect = {
+    id?: boolean
+    userId?: boolean
+    threadId?: boolean
+    user?: boolean | UserArgs
+    thread?: boolean | ThreadArgs
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type userThreadsInclude = {
+    user?: boolean | UserArgs
+    thread?: boolean | ThreadArgs
+  } 
+
+  export type userThreadsGetPayload<S extends boolean | null | undefined | userThreadsArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? userThreads :
+    S extends undefined ? never :
+    S extends { include: any } & (userThreadsArgs | userThreadsFindManyArgs)
+    ? userThreads  & {
+    [P in TruthyKeys<S['include']>]:
+        P extends 'user' ? UserGetPayload<S['include'][P]> | null :
+        P extends 'thread' ? ThreadGetPayload<S['include'][P]> | null :  never
+  } 
+    : S extends { select: any } & (userThreadsArgs | userThreadsFindManyArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+        P extends 'user' ? UserGetPayload<S['select'][P]> | null :
+        P extends 'thread' ? ThreadGetPayload<S['select'][P]> | null :  P extends keyof userThreads ? userThreads[P] : never
+  } 
+      : userThreads
+
+
+  type userThreadsCountArgs = Merge<
+    Omit<userThreadsFindManyArgs, 'select' | 'include'> & {
+      select?: UserThreadsCountAggregateInputType | true
+    }
+  >
+
+  export interface userThreadsDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
+    /**
+     * Find zero or one UserThreads that matches the filter.
+     * @param {userThreadsFindUniqueArgs} args - Arguments to find a UserThreads
+     * @example
+     * // Get one UserThreads
+     * const userThreads = await prisma.userThreads.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends userThreadsFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args: SelectSubset<T, userThreadsFindUniqueArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'userThreads'> extends True ? Prisma__userThreadsClient<userThreadsGetPayload<T>> : Prisma__userThreadsClient<userThreadsGetPayload<T> | null, null>
+
+    /**
+     * Find one UserThreads that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {userThreadsFindUniqueOrThrowArgs} args - Arguments to find a UserThreads
+     * @example
+     * // Get one UserThreads
+     * const userThreads = await prisma.userThreads.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends userThreadsFindUniqueOrThrowArgs>(
+      args?: SelectSubset<T, userThreadsFindUniqueOrThrowArgs>
+    ): Prisma__userThreadsClient<userThreadsGetPayload<T>>
+
+    /**
+     * Find the first UserThreads that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {userThreadsFindFirstArgs} args - Arguments to find a UserThreads
+     * @example
+     * // Get one UserThreads
+     * const userThreads = await prisma.userThreads.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends userThreadsFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args?: SelectSubset<T, userThreadsFindFirstArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'userThreads'> extends True ? Prisma__userThreadsClient<userThreadsGetPayload<T>> : Prisma__userThreadsClient<userThreadsGetPayload<T> | null, null>
+
+    /**
+     * Find the first UserThreads that matches the filter or
+     * throw `NotFoundError` if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {userThreadsFindFirstOrThrowArgs} args - Arguments to find a UserThreads
+     * @example
+     * // Get one UserThreads
+     * const userThreads = await prisma.userThreads.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends userThreadsFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, userThreadsFindFirstOrThrowArgs>
+    ): Prisma__userThreadsClient<userThreadsGetPayload<T>>
+
+    /**
+     * Find zero or more UserThreads that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {userThreadsFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all UserThreads
+     * const userThreads = await prisma.userThreads.findMany()
+     * 
+     * // Get first 10 UserThreads
+     * const userThreads = await prisma.userThreads.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const userThreadsWithIdOnly = await prisma.userThreads.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends userThreadsFindManyArgs>(
+      args?: SelectSubset<T, userThreadsFindManyArgs>
+    ): PrismaPromise<Array<userThreadsGetPayload<T>>>
+
+    /**
+     * Create a UserThreads.
+     * @param {userThreadsCreateArgs} args - Arguments to create a UserThreads.
+     * @example
+     * // Create one UserThreads
+     * const UserThreads = await prisma.userThreads.create({
+     *   data: {
+     *     // ... data to create a UserThreads
+     *   }
+     * })
+     * 
+    **/
+    create<T extends userThreadsCreateArgs>(
+      args: SelectSubset<T, userThreadsCreateArgs>
+    ): Prisma__userThreadsClient<userThreadsGetPayload<T>>
+
+    /**
+     * Create many UserThreads.
+     *     @param {userThreadsCreateManyArgs} args - Arguments to create many UserThreads.
+     *     @example
+     *     // Create many UserThreads
+     *     const userThreads = await prisma.userThreads.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends userThreadsCreateManyArgs>(
+      args?: SelectSubset<T, userThreadsCreateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a UserThreads.
+     * @param {userThreadsDeleteArgs} args - Arguments to delete one UserThreads.
+     * @example
+     * // Delete one UserThreads
+     * const UserThreads = await prisma.userThreads.delete({
+     *   where: {
+     *     // ... filter to delete one UserThreads
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends userThreadsDeleteArgs>(
+      args: SelectSubset<T, userThreadsDeleteArgs>
+    ): Prisma__userThreadsClient<userThreadsGetPayload<T>>
+
+    /**
+     * Update one UserThreads.
+     * @param {userThreadsUpdateArgs} args - Arguments to update one UserThreads.
+     * @example
+     * // Update one UserThreads
+     * const userThreads = await prisma.userThreads.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends userThreadsUpdateArgs>(
+      args: SelectSubset<T, userThreadsUpdateArgs>
+    ): Prisma__userThreadsClient<userThreadsGetPayload<T>>
+
+    /**
+     * Delete zero or more UserThreads.
+     * @param {userThreadsDeleteManyArgs} args - Arguments to filter UserThreads to delete.
+     * @example
+     * // Delete a few UserThreads
+     * const { count } = await prisma.userThreads.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends userThreadsDeleteManyArgs>(
+      args?: SelectSubset<T, userThreadsDeleteManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more UserThreads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {userThreadsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many UserThreads
+     * const userThreads = await prisma.userThreads.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends userThreadsUpdateManyArgs>(
+      args: SelectSubset<T, userThreadsUpdateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one UserThreads.
+     * @param {userThreadsUpsertArgs} args - Arguments to update or create a UserThreads.
+     * @example
+     * // Update or create a UserThreads
+     * const userThreads = await prisma.userThreads.upsert({
+     *   create: {
+     *     // ... data to create a UserThreads
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the UserThreads we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends userThreadsUpsertArgs>(
+      args: SelectSubset<T, userThreadsUpsertArgs>
+    ): Prisma__userThreadsClient<userThreadsGetPayload<T>>
+
+    /**
+     * Count the number of UserThreads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {userThreadsCountArgs} args - Arguments to filter UserThreads to count.
+     * @example
+     * // Count the number of UserThreads
+     * const count = await prisma.userThreads.count({
+     *   where: {
+     *     // ... the filter for the UserThreads we want to count
+     *   }
+     * })
+    **/
+    count<T extends userThreadsCountArgs>(
+      args?: Subset<T, userThreadsCountArgs>,
+    ): PrismaPromise<
+      T extends _Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], UserThreadsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a UserThreads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserThreadsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends UserThreadsAggregateArgs>(args: Subset<T, UserThreadsAggregateArgs>): PrismaPromise<GetUserThreadsAggregateType<T>>
+
+    /**
+     * Group by UserThreads.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserThreadsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends UserThreadsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: UserThreadsGroupByArgs['orderBy'] }
+        : { orderBy?: UserThreadsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends TupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, UserThreadsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetUserThreadsGroupByPayload<T> : PrismaPromise<InputErrors>
+
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for userThreads.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export class Prisma__userThreadsClient<T, Null = never> implements PrismaPromise<T> {
+    [prisma]: true;
+    private readonly _dmmf;
+    private readonly _fetcher;
+    private readonly _queryType;
+    private readonly _rootField;
+    private readonly _clientMethod;
+    private readonly _args;
+    private readonly _dataPath;
+    private readonly _errorFormat;
+    private readonly _measurePerformance?;
+    private _isList;
+    private _callsite;
+    private _requestPromise?;
+    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
+    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
+
+    user<T extends UserArgs= {}>(args?: Subset<T, UserArgs>): Prisma__UserClient<UserGetPayload<T> | Null>;
+
+    thread<T extends ThreadArgs= {}>(args?: Subset<T, ThreadArgs>): Prisma__ThreadClient<ThreadGetPayload<T> | Null>;
+
+    private get _document();
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
+  }
+
+
+
+  // Custom InputTypes
+
+  /**
+   * userThreads base type for findUnique actions
+   */
+  export type userThreadsFindUniqueArgsBase = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * Filter, which userThreads to fetch.
+     * 
+    **/
+    where: userThreadsWhereUniqueInput
+  }
+
+  /**
+   * userThreads findUnique
+   */
+  export interface userThreadsFindUniqueArgs extends userThreadsFindUniqueArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * userThreads findUniqueOrThrow
+   */
+  export type userThreadsFindUniqueOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * Filter, which userThreads to fetch.
+     * 
+    **/
+    where: userThreadsWhereUniqueInput
+  }
+
+
+  /**
+   * userThreads base type for findFirst actions
+   */
+  export type userThreadsFindFirstArgsBase = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * Filter, which userThreads to fetch.
+     * 
+    **/
+    where?: userThreadsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of userThreads to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<userThreadsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for userThreads.
+     * 
+    **/
+    cursor?: userThreadsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` userThreads from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` userThreads.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of userThreads.
+     * 
+    **/
+    distinct?: Enumerable<UserThreadsScalarFieldEnum>
+  }
+
+  /**
+   * userThreads findFirst
+   */
+  export interface userThreadsFindFirstArgs extends userThreadsFindFirstArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * userThreads findFirstOrThrow
+   */
+  export type userThreadsFindFirstOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * Filter, which userThreads to fetch.
+     * 
+    **/
+    where?: userThreadsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of userThreads to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<userThreadsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for userThreads.
+     * 
+    **/
+    cursor?: userThreadsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` userThreads from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` userThreads.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of userThreads.
+     * 
+    **/
+    distinct?: Enumerable<UserThreadsScalarFieldEnum>
+  }
+
+
+  /**
+   * userThreads findMany
+   */
+  export type userThreadsFindManyArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * Filter, which userThreads to fetch.
+     * 
+    **/
+    where?: userThreadsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of userThreads to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<userThreadsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing userThreads.
+     * 
+    **/
+    cursor?: userThreadsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` userThreads from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` userThreads.
+     * 
+    **/
+    skip?: number
+    distinct?: Enumerable<UserThreadsScalarFieldEnum>
+  }
+
+
+  /**
+   * userThreads create
+   */
+  export type userThreadsCreateArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * The data needed to create a userThreads.
+     * 
+    **/
+    data: XOR<userThreadsCreateInput, userThreadsUncheckedCreateInput>
+  }
+
+
+  /**
+   * userThreads createMany
+   */
+  export type userThreadsCreateManyArgs = {
+    /**
+     * The data used to create many userThreads.
+     * 
+    **/
+    data: Enumerable<userThreadsCreateManyInput>
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * userThreads update
+   */
+  export type userThreadsUpdateArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * The data needed to update a userThreads.
+     * 
+    **/
+    data: XOR<userThreadsUpdateInput, userThreadsUncheckedUpdateInput>
+    /**
+     * Choose, which userThreads to update.
+     * 
+    **/
+    where: userThreadsWhereUniqueInput
+  }
+
+
+  /**
+   * userThreads updateMany
+   */
+  export type userThreadsUpdateManyArgs = {
+    /**
+     * The data used to update userThreads.
+     * 
+    **/
+    data: XOR<userThreadsUpdateManyMutationInput, userThreadsUncheckedUpdateManyInput>
+    /**
+     * Filter which userThreads to update
+     * 
+    **/
+    where?: userThreadsWhereInput
+  }
+
+
+  /**
+   * userThreads upsert
+   */
+  export type userThreadsUpsertArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * The filter to search for the userThreads to update in case it exists.
+     * 
+    **/
+    where: userThreadsWhereUniqueInput
+    /**
+     * In case the userThreads found by the `where` argument doesn't exist, create a new userThreads with this data.
+     * 
+    **/
+    create: XOR<userThreadsCreateInput, userThreadsUncheckedCreateInput>
+    /**
+     * In case the userThreads was found with the provided `where` argument, update it with this data.
+     * 
+    **/
+    update: XOR<userThreadsUpdateInput, userThreadsUncheckedUpdateInput>
+  }
+
+
+  /**
+   * userThreads delete
+   */
+  export type userThreadsDeleteArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    /**
+     * Filter which userThreads to delete.
+     * 
+    **/
+    where: userThreadsWhereUniqueInput
+  }
+
+
+  /**
+   * userThreads deleteMany
+   */
+  export type userThreadsDeleteManyArgs = {
+    /**
+     * Filter which userThreads to delete
+     * 
+    **/
+    where?: userThreadsWhereInput
+  }
+
+
+  /**
+   * userThreads without action
+   */
+  export type userThreadsArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
   }
 
 
@@ -2185,17 +4730,23 @@ export namespace Prisma {
 
   export type ThreadAvgAggregateOutputType = {
     id: number | null
+    totalReact: number | null
+    totalComment: number | null
     authorId: number | null
   }
 
   export type ThreadSumAggregateOutputType = {
     id: number | null
+    totalReact: number | null
+    totalComment: number | null
     authorId: number | null
   }
 
   export type ThreadMinAggregateOutputType = {
     id: number | null
     content: string | null
+    totalReact: number | null
+    totalComment: number | null
     authorId: number | null
     privacy: ThreadPrivacy | null
     destination: DestinationThread | null
@@ -2208,6 +4759,8 @@ export namespace Prisma {
   export type ThreadMaxAggregateOutputType = {
     id: number | null
     content: string | null
+    totalReact: number | null
+    totalComment: number | null
     authorId: number | null
     privacy: ThreadPrivacy | null
     destination: DestinationThread | null
@@ -2220,6 +4773,8 @@ export namespace Prisma {
   export type ThreadCountAggregateOutputType = {
     id: number
     content: number
+    totalReact: number
+    totalComment: number
     authorId: number
     privacy: number
     destination: number
@@ -2233,17 +4788,23 @@ export namespace Prisma {
 
   export type ThreadAvgAggregateInputType = {
     id?: true
+    totalReact?: true
+    totalComment?: true
     authorId?: true
   }
 
   export type ThreadSumAggregateInputType = {
     id?: true
+    totalReact?: true
+    totalComment?: true
     authorId?: true
   }
 
   export type ThreadMinAggregateInputType = {
     id?: true
     content?: true
+    totalReact?: true
+    totalComment?: true
     authorId?: true
     privacy?: true
     destination?: true
@@ -2256,6 +4817,8 @@ export namespace Prisma {
   export type ThreadMaxAggregateInputType = {
     id?: true
     content?: true
+    totalReact?: true
+    totalComment?: true
     authorId?: true
     privacy?: true
     destination?: true
@@ -2268,6 +4831,8 @@ export namespace Prisma {
   export type ThreadCountAggregateInputType = {
     id?: true
     content?: true
+    totalReact?: true
+    totalComment?: true
     authorId?: true
     privacy?: true
     destination?: true
@@ -2373,6 +4938,8 @@ export namespace Prisma {
   export type ThreadGroupByOutputType = {
     id: number
     content: string
+    totalReact: number | null
+    totalComment: number | null
     authorId: number | null
     privacy: ThreadPrivacy
     destination: DestinationThread
@@ -2404,6 +4971,8 @@ export namespace Prisma {
   export type ThreadSelect = {
     id?: boolean
     content?: boolean
+    totalReact?: boolean
+    totalComment?: boolean
     authorId?: boolean
     author?: boolean | UserArgs
     privacy?: boolean
@@ -2412,11 +4981,21 @@ export namespace Prisma {
     isDelete?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    user?: boolean | ThreadUserArgs
+    attachment?: boolean | ThreadAttachmentArgs
+    reaction?: boolean | ThreadReactionArgs
+    Comment?: boolean | ThreadCommentArgs
+    _count?: boolean | ThreadCountOutputTypeArgs
   }
 
 
   export type ThreadInclude = {
     author?: boolean | UserArgs
+    user?: boolean | ThreadUserArgs
+    attachment?: boolean | ThreadAttachmentArgs
+    reaction?: boolean | ThreadReactionArgs
+    Comment?: boolean | ThreadCommentArgs
+    _count?: boolean | ThreadCountOutputTypeArgs
   } 
 
   export type ThreadGetPayload<S extends boolean | null | undefined | ThreadArgs> =
@@ -2426,12 +5005,22 @@ export namespace Prisma {
     S extends { include: any } & (ThreadArgs | ThreadFindManyArgs)
     ? Thread  & {
     [P in TruthyKeys<S['include']>]:
-        P extends 'author' ? UserGetPayload<S['include'][P]> | null :  never
+        P extends 'author' ? UserGetPayload<S['include'][P]> | null :
+        P extends 'user' ? Array < userThreadsGetPayload<S['include'][P]>>  :
+        P extends 'attachment' ? Array < threadAttachmentsGetPayload<S['include'][P]>>  :
+        P extends 'reaction' ? Array < reactionGetPayload<S['include'][P]>>  :
+        P extends 'Comment' ? Array < CommentGetPayload<S['include'][P]>>  :
+        P extends '_count' ? ThreadCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : S extends { select: any } & (ThreadArgs | ThreadFindManyArgs)
       ? {
     [P in TruthyKeys<S['select']>]:
-        P extends 'author' ? UserGetPayload<S['select'][P]> | null :  P extends keyof Thread ? Thread[P] : never
+        P extends 'author' ? UserGetPayload<S['select'][P]> | null :
+        P extends 'user' ? Array < userThreadsGetPayload<S['select'][P]>>  :
+        P extends 'attachment' ? Array < threadAttachmentsGetPayload<S['select'][P]>>  :
+        P extends 'reaction' ? Array < reactionGetPayload<S['select'][P]>>  :
+        P extends 'Comment' ? Array < CommentGetPayload<S['select'][P]>>  :
+        P extends '_count' ? ThreadCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Thread ? Thread[P] : never
   } 
       : Thread
 
@@ -2806,6 +5395,14 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: 'PrismaClientPromise';
 
     author<T extends UserArgs= {}>(args?: Subset<T, UserArgs>): Prisma__UserClient<UserGetPayload<T> | Null>;
+
+    user<T extends ThreadUserArgs= {}>(args?: Subset<T, ThreadUserArgs>): PrismaPromise<Array<userThreadsGetPayload<T>>| Null>;
+
+    attachment<T extends ThreadAttachmentArgs= {}>(args?: Subset<T, ThreadAttachmentArgs>): PrismaPromise<Array<threadAttachmentsGetPayload<T>>| Null>;
+
+    reaction<T extends ThreadReactionArgs= {}>(args?: Subset<T, ThreadReactionArgs>): PrismaPromise<Array<reactionGetPayload<T>>| Null>;
+
+    Comment<T extends ThreadCommentArgs= {}>(args?: Subset<T, ThreadCommentArgs>): PrismaPromise<Array<CommentGetPayload<T>>| Null>;
 
     private get _document();
     /**
@@ -3211,6 +5808,98 @@ export namespace Prisma {
 
 
   /**
+   * Thread.user
+   */
+  export type ThreadUserArgs = {
+    /**
+     * Select specific fields to fetch from the userThreads
+     * 
+    **/
+    select?: userThreadsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: userThreadsInclude | null
+    where?: userThreadsWhereInput
+    orderBy?: Enumerable<userThreadsOrderByWithRelationInput>
+    cursor?: userThreadsWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<UserThreadsScalarFieldEnum>
+  }
+
+
+  /**
+   * Thread.attachment
+   */
+  export type ThreadAttachmentArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    where?: threadAttachmentsWhereInput
+    orderBy?: Enumerable<threadAttachmentsOrderByWithRelationInput>
+    cursor?: threadAttachmentsWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<ThreadAttachmentsScalarFieldEnum>
+  }
+
+
+  /**
+   * Thread.reaction
+   */
+  export type ThreadReactionArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    where?: reactionWhereInput
+    orderBy?: Enumerable<reactionOrderByWithRelationInput>
+    cursor?: reactionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<ReactionScalarFieldEnum>
+  }
+
+
+  /**
+   * Thread.Comment
+   */
+  export type ThreadCommentArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    where?: CommentWhereInput
+    orderBy?: Enumerable<CommentOrderByWithRelationInput>
+    cursor?: CommentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<CommentScalarFieldEnum>
+  }
+
+
+  /**
    * Thread without action
    */
   export type ThreadArgs = {
@@ -3224,6 +5913,3274 @@ export namespace Prisma {
      * 
     **/
     include?: ThreadInclude | null
+  }
+
+
+
+  /**
+   * Model threadAttachments
+   */
+
+
+  export type AggregateThreadAttachments = {
+    _count: ThreadAttachmentsCountAggregateOutputType | null
+    _avg: ThreadAttachmentsAvgAggregateOutputType | null
+    _sum: ThreadAttachmentsSumAggregateOutputType | null
+    _min: ThreadAttachmentsMinAggregateOutputType | null
+    _max: ThreadAttachmentsMaxAggregateOutputType | null
+  }
+
+  export type ThreadAttachmentsAvgAggregateOutputType = {
+    id: number | null
+    threadId: number | null
+  }
+
+  export type ThreadAttachmentsSumAggregateOutputType = {
+    id: number | null
+    threadId: number | null
+  }
+
+  export type ThreadAttachmentsMinAggregateOutputType = {
+    id: number | null
+    link: string | null
+    type: AttachmentType | null
+    threadId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ThreadAttachmentsMaxAggregateOutputType = {
+    id: number | null
+    link: string | null
+    type: AttachmentType | null
+    threadId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ThreadAttachmentsCountAggregateOutputType = {
+    id: number
+    link: number
+    type: number
+    threadId: number
+    isActive: number
+    isDelete: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type ThreadAttachmentsAvgAggregateInputType = {
+    id?: true
+    threadId?: true
+  }
+
+  export type ThreadAttachmentsSumAggregateInputType = {
+    id?: true
+    threadId?: true
+  }
+
+  export type ThreadAttachmentsMinAggregateInputType = {
+    id?: true
+    link?: true
+    type?: true
+    threadId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ThreadAttachmentsMaxAggregateInputType = {
+    id?: true
+    link?: true
+    type?: true
+    threadId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ThreadAttachmentsCountAggregateInputType = {
+    id?: true
+    link?: true
+    type?: true
+    threadId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type ThreadAttachmentsAggregateArgs = {
+    /**
+     * Filter which threadAttachments to aggregate.
+     * 
+    **/
+    where?: threadAttachmentsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of threadAttachments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<threadAttachmentsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     * 
+    **/
+    cursor?: threadAttachmentsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` threadAttachments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` threadAttachments.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned threadAttachments
+    **/
+    _count?: true | ThreadAttachmentsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ThreadAttachmentsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ThreadAttachmentsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ThreadAttachmentsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ThreadAttachmentsMaxAggregateInputType
+  }
+
+  export type GetThreadAttachmentsAggregateType<T extends ThreadAttachmentsAggregateArgs> = {
+        [P in keyof T & keyof AggregateThreadAttachments]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateThreadAttachments[P]>
+      : GetScalarType<T[P], AggregateThreadAttachments[P]>
+  }
+
+
+
+
+  export type ThreadAttachmentsGroupByArgs = {
+    where?: threadAttachmentsWhereInput
+    orderBy?: Enumerable<threadAttachmentsOrderByWithAggregationInput>
+    by: Array<ThreadAttachmentsScalarFieldEnum>
+    having?: threadAttachmentsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ThreadAttachmentsCountAggregateInputType | true
+    _avg?: ThreadAttachmentsAvgAggregateInputType
+    _sum?: ThreadAttachmentsSumAggregateInputType
+    _min?: ThreadAttachmentsMinAggregateInputType
+    _max?: ThreadAttachmentsMaxAggregateInputType
+  }
+
+
+  export type ThreadAttachmentsGroupByOutputType = {
+    id: number
+    link: string
+    type: AttachmentType
+    threadId: number | null
+    isActive: boolean
+    isDelete: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: ThreadAttachmentsCountAggregateOutputType | null
+    _avg: ThreadAttachmentsAvgAggregateOutputType | null
+    _sum: ThreadAttachmentsSumAggregateOutputType | null
+    _min: ThreadAttachmentsMinAggregateOutputType | null
+    _max: ThreadAttachmentsMaxAggregateOutputType | null
+  }
+
+  type GetThreadAttachmentsGroupByPayload<T extends ThreadAttachmentsGroupByArgs> = PrismaPromise<
+    Array<
+      PickArray<ThreadAttachmentsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ThreadAttachmentsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ThreadAttachmentsGroupByOutputType[P]>
+            : GetScalarType<T[P], ThreadAttachmentsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type threadAttachmentsSelect = {
+    id?: boolean
+    link?: boolean
+    type?: boolean
+    threadId?: boolean
+    thread?: boolean | ThreadArgs
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type threadAttachmentsInclude = {
+    thread?: boolean | ThreadArgs
+  } 
+
+  export type threadAttachmentsGetPayload<S extends boolean | null | undefined | threadAttachmentsArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? threadAttachments :
+    S extends undefined ? never :
+    S extends { include: any } & (threadAttachmentsArgs | threadAttachmentsFindManyArgs)
+    ? threadAttachments  & {
+    [P in TruthyKeys<S['include']>]:
+        P extends 'thread' ? ThreadGetPayload<S['include'][P]> | null :  never
+  } 
+    : S extends { select: any } & (threadAttachmentsArgs | threadAttachmentsFindManyArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+        P extends 'thread' ? ThreadGetPayload<S['select'][P]> | null :  P extends keyof threadAttachments ? threadAttachments[P] : never
+  } 
+      : threadAttachments
+
+
+  type threadAttachmentsCountArgs = Merge<
+    Omit<threadAttachmentsFindManyArgs, 'select' | 'include'> & {
+      select?: ThreadAttachmentsCountAggregateInputType | true
+    }
+  >
+
+  export interface threadAttachmentsDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
+    /**
+     * Find zero or one ThreadAttachments that matches the filter.
+     * @param {threadAttachmentsFindUniqueArgs} args - Arguments to find a ThreadAttachments
+     * @example
+     * // Get one ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends threadAttachmentsFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args: SelectSubset<T, threadAttachmentsFindUniqueArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'threadAttachments'> extends True ? Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>> : Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T> | null, null>
+
+    /**
+     * Find one ThreadAttachments that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {threadAttachmentsFindUniqueOrThrowArgs} args - Arguments to find a ThreadAttachments
+     * @example
+     * // Get one ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends threadAttachmentsFindUniqueOrThrowArgs>(
+      args?: SelectSubset<T, threadAttachmentsFindUniqueOrThrowArgs>
+    ): Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>>
+
+    /**
+     * Find the first ThreadAttachments that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {threadAttachmentsFindFirstArgs} args - Arguments to find a ThreadAttachments
+     * @example
+     * // Get one ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends threadAttachmentsFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args?: SelectSubset<T, threadAttachmentsFindFirstArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'threadAttachments'> extends True ? Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>> : Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T> | null, null>
+
+    /**
+     * Find the first ThreadAttachments that matches the filter or
+     * throw `NotFoundError` if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {threadAttachmentsFindFirstOrThrowArgs} args - Arguments to find a ThreadAttachments
+     * @example
+     * // Get one ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends threadAttachmentsFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, threadAttachmentsFindFirstOrThrowArgs>
+    ): Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>>
+
+    /**
+     * Find zero or more ThreadAttachments that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {threadAttachmentsFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.findMany()
+     * 
+     * // Get first 10 ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const threadAttachmentsWithIdOnly = await prisma.threadAttachments.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends threadAttachmentsFindManyArgs>(
+      args?: SelectSubset<T, threadAttachmentsFindManyArgs>
+    ): PrismaPromise<Array<threadAttachmentsGetPayload<T>>>
+
+    /**
+     * Create a ThreadAttachments.
+     * @param {threadAttachmentsCreateArgs} args - Arguments to create a ThreadAttachments.
+     * @example
+     * // Create one ThreadAttachments
+     * const ThreadAttachments = await prisma.threadAttachments.create({
+     *   data: {
+     *     // ... data to create a ThreadAttachments
+     *   }
+     * })
+     * 
+    **/
+    create<T extends threadAttachmentsCreateArgs>(
+      args: SelectSubset<T, threadAttachmentsCreateArgs>
+    ): Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>>
+
+    /**
+     * Create many ThreadAttachments.
+     *     @param {threadAttachmentsCreateManyArgs} args - Arguments to create many ThreadAttachments.
+     *     @example
+     *     // Create many ThreadAttachments
+     *     const threadAttachments = await prisma.threadAttachments.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends threadAttachmentsCreateManyArgs>(
+      args?: SelectSubset<T, threadAttachmentsCreateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a ThreadAttachments.
+     * @param {threadAttachmentsDeleteArgs} args - Arguments to delete one ThreadAttachments.
+     * @example
+     * // Delete one ThreadAttachments
+     * const ThreadAttachments = await prisma.threadAttachments.delete({
+     *   where: {
+     *     // ... filter to delete one ThreadAttachments
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends threadAttachmentsDeleteArgs>(
+      args: SelectSubset<T, threadAttachmentsDeleteArgs>
+    ): Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>>
+
+    /**
+     * Update one ThreadAttachments.
+     * @param {threadAttachmentsUpdateArgs} args - Arguments to update one ThreadAttachments.
+     * @example
+     * // Update one ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends threadAttachmentsUpdateArgs>(
+      args: SelectSubset<T, threadAttachmentsUpdateArgs>
+    ): Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>>
+
+    /**
+     * Delete zero or more ThreadAttachments.
+     * @param {threadAttachmentsDeleteManyArgs} args - Arguments to filter ThreadAttachments to delete.
+     * @example
+     * // Delete a few ThreadAttachments
+     * const { count } = await prisma.threadAttachments.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends threadAttachmentsDeleteManyArgs>(
+      args?: SelectSubset<T, threadAttachmentsDeleteManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ThreadAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {threadAttachmentsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends threadAttachmentsUpdateManyArgs>(
+      args: SelectSubset<T, threadAttachmentsUpdateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one ThreadAttachments.
+     * @param {threadAttachmentsUpsertArgs} args - Arguments to update or create a ThreadAttachments.
+     * @example
+     * // Update or create a ThreadAttachments
+     * const threadAttachments = await prisma.threadAttachments.upsert({
+     *   create: {
+     *     // ... data to create a ThreadAttachments
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ThreadAttachments we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends threadAttachmentsUpsertArgs>(
+      args: SelectSubset<T, threadAttachmentsUpsertArgs>
+    ): Prisma__threadAttachmentsClient<threadAttachmentsGetPayload<T>>
+
+    /**
+     * Count the number of ThreadAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {threadAttachmentsCountArgs} args - Arguments to filter ThreadAttachments to count.
+     * @example
+     * // Count the number of ThreadAttachments
+     * const count = await prisma.threadAttachments.count({
+     *   where: {
+     *     // ... the filter for the ThreadAttachments we want to count
+     *   }
+     * })
+    **/
+    count<T extends threadAttachmentsCountArgs>(
+      args?: Subset<T, threadAttachmentsCountArgs>,
+    ): PrismaPromise<
+      T extends _Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ThreadAttachmentsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ThreadAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ThreadAttachmentsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ThreadAttachmentsAggregateArgs>(args: Subset<T, ThreadAttachmentsAggregateArgs>): PrismaPromise<GetThreadAttachmentsAggregateType<T>>
+
+    /**
+     * Group by ThreadAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ThreadAttachmentsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ThreadAttachmentsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ThreadAttachmentsGroupByArgs['orderBy'] }
+        : { orderBy?: ThreadAttachmentsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends TupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ThreadAttachmentsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetThreadAttachmentsGroupByPayload<T> : PrismaPromise<InputErrors>
+
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for threadAttachments.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export class Prisma__threadAttachmentsClient<T, Null = never> implements PrismaPromise<T> {
+    [prisma]: true;
+    private readonly _dmmf;
+    private readonly _fetcher;
+    private readonly _queryType;
+    private readonly _rootField;
+    private readonly _clientMethod;
+    private readonly _args;
+    private readonly _dataPath;
+    private readonly _errorFormat;
+    private readonly _measurePerformance?;
+    private _isList;
+    private _callsite;
+    private _requestPromise?;
+    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
+    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
+
+    thread<T extends ThreadArgs= {}>(args?: Subset<T, ThreadArgs>): Prisma__ThreadClient<ThreadGetPayload<T> | Null>;
+
+    private get _document();
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
+  }
+
+
+
+  // Custom InputTypes
+
+  /**
+   * threadAttachments base type for findUnique actions
+   */
+  export type threadAttachmentsFindUniqueArgsBase = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * Filter, which threadAttachments to fetch.
+     * 
+    **/
+    where: threadAttachmentsWhereUniqueInput
+  }
+
+  /**
+   * threadAttachments findUnique
+   */
+  export interface threadAttachmentsFindUniqueArgs extends threadAttachmentsFindUniqueArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * threadAttachments findUniqueOrThrow
+   */
+  export type threadAttachmentsFindUniqueOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * Filter, which threadAttachments to fetch.
+     * 
+    **/
+    where: threadAttachmentsWhereUniqueInput
+  }
+
+
+  /**
+   * threadAttachments base type for findFirst actions
+   */
+  export type threadAttachmentsFindFirstArgsBase = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * Filter, which threadAttachments to fetch.
+     * 
+    **/
+    where?: threadAttachmentsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of threadAttachments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<threadAttachmentsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for threadAttachments.
+     * 
+    **/
+    cursor?: threadAttachmentsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` threadAttachments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` threadAttachments.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of threadAttachments.
+     * 
+    **/
+    distinct?: Enumerable<ThreadAttachmentsScalarFieldEnum>
+  }
+
+  /**
+   * threadAttachments findFirst
+   */
+  export interface threadAttachmentsFindFirstArgs extends threadAttachmentsFindFirstArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * threadAttachments findFirstOrThrow
+   */
+  export type threadAttachmentsFindFirstOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * Filter, which threadAttachments to fetch.
+     * 
+    **/
+    where?: threadAttachmentsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of threadAttachments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<threadAttachmentsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for threadAttachments.
+     * 
+    **/
+    cursor?: threadAttachmentsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` threadAttachments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` threadAttachments.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of threadAttachments.
+     * 
+    **/
+    distinct?: Enumerable<ThreadAttachmentsScalarFieldEnum>
+  }
+
+
+  /**
+   * threadAttachments findMany
+   */
+  export type threadAttachmentsFindManyArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * Filter, which threadAttachments to fetch.
+     * 
+    **/
+    where?: threadAttachmentsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of threadAttachments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<threadAttachmentsOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing threadAttachments.
+     * 
+    **/
+    cursor?: threadAttachmentsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` threadAttachments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` threadAttachments.
+     * 
+    **/
+    skip?: number
+    distinct?: Enumerable<ThreadAttachmentsScalarFieldEnum>
+  }
+
+
+  /**
+   * threadAttachments create
+   */
+  export type threadAttachmentsCreateArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * The data needed to create a threadAttachments.
+     * 
+    **/
+    data: XOR<threadAttachmentsCreateInput, threadAttachmentsUncheckedCreateInput>
+  }
+
+
+  /**
+   * threadAttachments createMany
+   */
+  export type threadAttachmentsCreateManyArgs = {
+    /**
+     * The data used to create many threadAttachments.
+     * 
+    **/
+    data: Enumerable<threadAttachmentsCreateManyInput>
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * threadAttachments update
+   */
+  export type threadAttachmentsUpdateArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * The data needed to update a threadAttachments.
+     * 
+    **/
+    data: XOR<threadAttachmentsUpdateInput, threadAttachmentsUncheckedUpdateInput>
+    /**
+     * Choose, which threadAttachments to update.
+     * 
+    **/
+    where: threadAttachmentsWhereUniqueInput
+  }
+
+
+  /**
+   * threadAttachments updateMany
+   */
+  export type threadAttachmentsUpdateManyArgs = {
+    /**
+     * The data used to update threadAttachments.
+     * 
+    **/
+    data: XOR<threadAttachmentsUpdateManyMutationInput, threadAttachmentsUncheckedUpdateManyInput>
+    /**
+     * Filter which threadAttachments to update
+     * 
+    **/
+    where?: threadAttachmentsWhereInput
+  }
+
+
+  /**
+   * threadAttachments upsert
+   */
+  export type threadAttachmentsUpsertArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * The filter to search for the threadAttachments to update in case it exists.
+     * 
+    **/
+    where: threadAttachmentsWhereUniqueInput
+    /**
+     * In case the threadAttachments found by the `where` argument doesn't exist, create a new threadAttachments with this data.
+     * 
+    **/
+    create: XOR<threadAttachmentsCreateInput, threadAttachmentsUncheckedCreateInput>
+    /**
+     * In case the threadAttachments was found with the provided `where` argument, update it with this data.
+     * 
+    **/
+    update: XOR<threadAttachmentsUpdateInput, threadAttachmentsUncheckedUpdateInput>
+  }
+
+
+  /**
+   * threadAttachments delete
+   */
+  export type threadAttachmentsDeleteArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+    /**
+     * Filter which threadAttachments to delete.
+     * 
+    **/
+    where: threadAttachmentsWhereUniqueInput
+  }
+
+
+  /**
+   * threadAttachments deleteMany
+   */
+  export type threadAttachmentsDeleteManyArgs = {
+    /**
+     * Filter which threadAttachments to delete
+     * 
+    **/
+    where?: threadAttachmentsWhereInput
+  }
+
+
+  /**
+   * threadAttachments without action
+   */
+  export type threadAttachmentsArgs = {
+    /**
+     * Select specific fields to fetch from the threadAttachments
+     * 
+    **/
+    select?: threadAttachmentsSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: threadAttachmentsInclude | null
+  }
+
+
+
+  /**
+   * Model reaction
+   */
+
+
+  export type AggregateReaction = {
+    _count: ReactionCountAggregateOutputType | null
+    _avg: ReactionAvgAggregateOutputType | null
+    _sum: ReactionSumAggregateOutputType | null
+    _min: ReactionMinAggregateOutputType | null
+    _max: ReactionMaxAggregateOutputType | null
+  }
+
+  export type ReactionAvgAggregateOutputType = {
+    id: number | null
+    threadId: number | null
+    commentId: number | null
+    userId: number | null
+  }
+
+  export type ReactionSumAggregateOutputType = {
+    id: number | null
+    threadId: number | null
+    commentId: number | null
+    userId: number | null
+  }
+
+  export type ReactionMinAggregateOutputType = {
+    id: number | null
+    react: ReactType | null
+    threadId: number | null
+    commentId: number | null
+    userId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ReactionMaxAggregateOutputType = {
+    id: number | null
+    react: ReactType | null
+    threadId: number | null
+    commentId: number | null
+    userId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ReactionCountAggregateOutputType = {
+    id: number
+    react: number
+    threadId: number
+    commentId: number
+    userId: number
+    isActive: number
+    isDelete: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type ReactionAvgAggregateInputType = {
+    id?: true
+    threadId?: true
+    commentId?: true
+    userId?: true
+  }
+
+  export type ReactionSumAggregateInputType = {
+    id?: true
+    threadId?: true
+    commentId?: true
+    userId?: true
+  }
+
+  export type ReactionMinAggregateInputType = {
+    id?: true
+    react?: true
+    threadId?: true
+    commentId?: true
+    userId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ReactionMaxAggregateInputType = {
+    id?: true
+    react?: true
+    threadId?: true
+    commentId?: true
+    userId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ReactionCountAggregateInputType = {
+    id?: true
+    react?: true
+    threadId?: true
+    commentId?: true
+    userId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type ReactionAggregateArgs = {
+    /**
+     * Filter which reaction to aggregate.
+     * 
+    **/
+    where?: reactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of reactions to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<reactionOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     * 
+    **/
+    cursor?: reactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` reactions from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` reactions.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned reactions
+    **/
+    _count?: true | ReactionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ReactionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ReactionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ReactionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ReactionMaxAggregateInputType
+  }
+
+  export type GetReactionAggregateType<T extends ReactionAggregateArgs> = {
+        [P in keyof T & keyof AggregateReaction]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateReaction[P]>
+      : GetScalarType<T[P], AggregateReaction[P]>
+  }
+
+
+
+
+  export type ReactionGroupByArgs = {
+    where?: reactionWhereInput
+    orderBy?: Enumerable<reactionOrderByWithAggregationInput>
+    by: Array<ReactionScalarFieldEnum>
+    having?: reactionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ReactionCountAggregateInputType | true
+    _avg?: ReactionAvgAggregateInputType
+    _sum?: ReactionSumAggregateInputType
+    _min?: ReactionMinAggregateInputType
+    _max?: ReactionMaxAggregateInputType
+  }
+
+
+  export type ReactionGroupByOutputType = {
+    id: number
+    react: ReactType
+    threadId: number | null
+    commentId: number | null
+    userId: number | null
+    isActive: boolean
+    isDelete: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: ReactionCountAggregateOutputType | null
+    _avg: ReactionAvgAggregateOutputType | null
+    _sum: ReactionSumAggregateOutputType | null
+    _min: ReactionMinAggregateOutputType | null
+    _max: ReactionMaxAggregateOutputType | null
+  }
+
+  type GetReactionGroupByPayload<T extends ReactionGroupByArgs> = PrismaPromise<
+    Array<
+      PickArray<ReactionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ReactionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ReactionGroupByOutputType[P]>
+            : GetScalarType<T[P], ReactionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type reactionSelect = {
+    id?: boolean
+    react?: boolean
+    threadId?: boolean
+    thread?: boolean | ThreadArgs
+    commentId?: boolean
+    comment?: boolean | CommentArgs
+    userId?: boolean
+    user?: boolean | UserArgs
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+
+  export type reactionInclude = {
+    thread?: boolean | ThreadArgs
+    comment?: boolean | CommentArgs
+    user?: boolean | UserArgs
+  } 
+
+  export type reactionGetPayload<S extends boolean | null | undefined | reactionArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? reaction :
+    S extends undefined ? never :
+    S extends { include: any } & (reactionArgs | reactionFindManyArgs)
+    ? reaction  & {
+    [P in TruthyKeys<S['include']>]:
+        P extends 'thread' ? ThreadGetPayload<S['include'][P]> | null :
+        P extends 'comment' ? CommentGetPayload<S['include'][P]> | null :
+        P extends 'user' ? UserGetPayload<S['include'][P]> | null :  never
+  } 
+    : S extends { select: any } & (reactionArgs | reactionFindManyArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+        P extends 'thread' ? ThreadGetPayload<S['select'][P]> | null :
+        P extends 'comment' ? CommentGetPayload<S['select'][P]> | null :
+        P extends 'user' ? UserGetPayload<S['select'][P]> | null :  P extends keyof reaction ? reaction[P] : never
+  } 
+      : reaction
+
+
+  type reactionCountArgs = Merge<
+    Omit<reactionFindManyArgs, 'select' | 'include'> & {
+      select?: ReactionCountAggregateInputType | true
+    }
+  >
+
+  export interface reactionDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
+    /**
+     * Find zero or one Reaction that matches the filter.
+     * @param {reactionFindUniqueArgs} args - Arguments to find a Reaction
+     * @example
+     * // Get one Reaction
+     * const reaction = await prisma.reaction.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends reactionFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args: SelectSubset<T, reactionFindUniqueArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'reaction'> extends True ? Prisma__reactionClient<reactionGetPayload<T>> : Prisma__reactionClient<reactionGetPayload<T> | null, null>
+
+    /**
+     * Find one Reaction that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {reactionFindUniqueOrThrowArgs} args - Arguments to find a Reaction
+     * @example
+     * // Get one Reaction
+     * const reaction = await prisma.reaction.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends reactionFindUniqueOrThrowArgs>(
+      args?: SelectSubset<T, reactionFindUniqueOrThrowArgs>
+    ): Prisma__reactionClient<reactionGetPayload<T>>
+
+    /**
+     * Find the first Reaction that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {reactionFindFirstArgs} args - Arguments to find a Reaction
+     * @example
+     * // Get one Reaction
+     * const reaction = await prisma.reaction.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends reactionFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args?: SelectSubset<T, reactionFindFirstArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'reaction'> extends True ? Prisma__reactionClient<reactionGetPayload<T>> : Prisma__reactionClient<reactionGetPayload<T> | null, null>
+
+    /**
+     * Find the first Reaction that matches the filter or
+     * throw `NotFoundError` if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {reactionFindFirstOrThrowArgs} args - Arguments to find a Reaction
+     * @example
+     * // Get one Reaction
+     * const reaction = await prisma.reaction.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends reactionFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, reactionFindFirstOrThrowArgs>
+    ): Prisma__reactionClient<reactionGetPayload<T>>
+
+    /**
+     * Find zero or more Reactions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {reactionFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Reactions
+     * const reactions = await prisma.reaction.findMany()
+     * 
+     * // Get first 10 Reactions
+     * const reactions = await prisma.reaction.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const reactionWithIdOnly = await prisma.reaction.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends reactionFindManyArgs>(
+      args?: SelectSubset<T, reactionFindManyArgs>
+    ): PrismaPromise<Array<reactionGetPayload<T>>>
+
+    /**
+     * Create a Reaction.
+     * @param {reactionCreateArgs} args - Arguments to create a Reaction.
+     * @example
+     * // Create one Reaction
+     * const Reaction = await prisma.reaction.create({
+     *   data: {
+     *     // ... data to create a Reaction
+     *   }
+     * })
+     * 
+    **/
+    create<T extends reactionCreateArgs>(
+      args: SelectSubset<T, reactionCreateArgs>
+    ): Prisma__reactionClient<reactionGetPayload<T>>
+
+    /**
+     * Create many Reactions.
+     *     @param {reactionCreateManyArgs} args - Arguments to create many Reactions.
+     *     @example
+     *     // Create many Reactions
+     *     const reaction = await prisma.reaction.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends reactionCreateManyArgs>(
+      args?: SelectSubset<T, reactionCreateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Reaction.
+     * @param {reactionDeleteArgs} args - Arguments to delete one Reaction.
+     * @example
+     * // Delete one Reaction
+     * const Reaction = await prisma.reaction.delete({
+     *   where: {
+     *     // ... filter to delete one Reaction
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends reactionDeleteArgs>(
+      args: SelectSubset<T, reactionDeleteArgs>
+    ): Prisma__reactionClient<reactionGetPayload<T>>
+
+    /**
+     * Update one Reaction.
+     * @param {reactionUpdateArgs} args - Arguments to update one Reaction.
+     * @example
+     * // Update one Reaction
+     * const reaction = await prisma.reaction.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends reactionUpdateArgs>(
+      args: SelectSubset<T, reactionUpdateArgs>
+    ): Prisma__reactionClient<reactionGetPayload<T>>
+
+    /**
+     * Delete zero or more Reactions.
+     * @param {reactionDeleteManyArgs} args - Arguments to filter Reactions to delete.
+     * @example
+     * // Delete a few Reactions
+     * const { count } = await prisma.reaction.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends reactionDeleteManyArgs>(
+      args?: SelectSubset<T, reactionDeleteManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Reactions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {reactionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Reactions
+     * const reaction = await prisma.reaction.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends reactionUpdateManyArgs>(
+      args: SelectSubset<T, reactionUpdateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Reaction.
+     * @param {reactionUpsertArgs} args - Arguments to update or create a Reaction.
+     * @example
+     * // Update or create a Reaction
+     * const reaction = await prisma.reaction.upsert({
+     *   create: {
+     *     // ... data to create a Reaction
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Reaction we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends reactionUpsertArgs>(
+      args: SelectSubset<T, reactionUpsertArgs>
+    ): Prisma__reactionClient<reactionGetPayload<T>>
+
+    /**
+     * Count the number of Reactions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {reactionCountArgs} args - Arguments to filter Reactions to count.
+     * @example
+     * // Count the number of Reactions
+     * const count = await prisma.reaction.count({
+     *   where: {
+     *     // ... the filter for the Reactions we want to count
+     *   }
+     * })
+    **/
+    count<T extends reactionCountArgs>(
+      args?: Subset<T, reactionCountArgs>,
+    ): PrismaPromise<
+      T extends _Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ReactionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Reaction.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReactionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ReactionAggregateArgs>(args: Subset<T, ReactionAggregateArgs>): PrismaPromise<GetReactionAggregateType<T>>
+
+    /**
+     * Group by Reaction.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReactionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ReactionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ReactionGroupByArgs['orderBy'] }
+        : { orderBy?: ReactionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends TupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ReactionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetReactionGroupByPayload<T> : PrismaPromise<InputErrors>
+
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for reaction.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export class Prisma__reactionClient<T, Null = never> implements PrismaPromise<T> {
+    [prisma]: true;
+    private readonly _dmmf;
+    private readonly _fetcher;
+    private readonly _queryType;
+    private readonly _rootField;
+    private readonly _clientMethod;
+    private readonly _args;
+    private readonly _dataPath;
+    private readonly _errorFormat;
+    private readonly _measurePerformance?;
+    private _isList;
+    private _callsite;
+    private _requestPromise?;
+    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
+    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
+
+    thread<T extends ThreadArgs= {}>(args?: Subset<T, ThreadArgs>): Prisma__ThreadClient<ThreadGetPayload<T> | Null>;
+
+    comment<T extends CommentArgs= {}>(args?: Subset<T, CommentArgs>): Prisma__CommentClient<CommentGetPayload<T> | Null>;
+
+    user<T extends UserArgs= {}>(args?: Subset<T, UserArgs>): Prisma__UserClient<UserGetPayload<T> | Null>;
+
+    private get _document();
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
+  }
+
+
+
+  // Custom InputTypes
+
+  /**
+   * reaction base type for findUnique actions
+   */
+  export type reactionFindUniqueArgsBase = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * Filter, which reaction to fetch.
+     * 
+    **/
+    where: reactionWhereUniqueInput
+  }
+
+  /**
+   * reaction findUnique
+   */
+  export interface reactionFindUniqueArgs extends reactionFindUniqueArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * reaction findUniqueOrThrow
+   */
+  export type reactionFindUniqueOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * Filter, which reaction to fetch.
+     * 
+    **/
+    where: reactionWhereUniqueInput
+  }
+
+
+  /**
+   * reaction base type for findFirst actions
+   */
+  export type reactionFindFirstArgsBase = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * Filter, which reaction to fetch.
+     * 
+    **/
+    where?: reactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of reactions to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<reactionOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for reactions.
+     * 
+    **/
+    cursor?: reactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` reactions from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` reactions.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of reactions.
+     * 
+    **/
+    distinct?: Enumerable<ReactionScalarFieldEnum>
+  }
+
+  /**
+   * reaction findFirst
+   */
+  export interface reactionFindFirstArgs extends reactionFindFirstArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * reaction findFirstOrThrow
+   */
+  export type reactionFindFirstOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * Filter, which reaction to fetch.
+     * 
+    **/
+    where?: reactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of reactions to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<reactionOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for reactions.
+     * 
+    **/
+    cursor?: reactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` reactions from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` reactions.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of reactions.
+     * 
+    **/
+    distinct?: Enumerable<ReactionScalarFieldEnum>
+  }
+
+
+  /**
+   * reaction findMany
+   */
+  export type reactionFindManyArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * Filter, which reactions to fetch.
+     * 
+    **/
+    where?: reactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of reactions to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<reactionOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing reactions.
+     * 
+    **/
+    cursor?: reactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` reactions from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` reactions.
+     * 
+    **/
+    skip?: number
+    distinct?: Enumerable<ReactionScalarFieldEnum>
+  }
+
+
+  /**
+   * reaction create
+   */
+  export type reactionCreateArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * The data needed to create a reaction.
+     * 
+    **/
+    data: XOR<reactionCreateInput, reactionUncheckedCreateInput>
+  }
+
+
+  /**
+   * reaction createMany
+   */
+  export type reactionCreateManyArgs = {
+    /**
+     * The data used to create many reactions.
+     * 
+    **/
+    data: Enumerable<reactionCreateManyInput>
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * reaction update
+   */
+  export type reactionUpdateArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * The data needed to update a reaction.
+     * 
+    **/
+    data: XOR<reactionUpdateInput, reactionUncheckedUpdateInput>
+    /**
+     * Choose, which reaction to update.
+     * 
+    **/
+    where: reactionWhereUniqueInput
+  }
+
+
+  /**
+   * reaction updateMany
+   */
+  export type reactionUpdateManyArgs = {
+    /**
+     * The data used to update reactions.
+     * 
+    **/
+    data: XOR<reactionUpdateManyMutationInput, reactionUncheckedUpdateManyInput>
+    /**
+     * Filter which reactions to update
+     * 
+    **/
+    where?: reactionWhereInput
+  }
+
+
+  /**
+   * reaction upsert
+   */
+  export type reactionUpsertArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * The filter to search for the reaction to update in case it exists.
+     * 
+    **/
+    where: reactionWhereUniqueInput
+    /**
+     * In case the reaction found by the `where` argument doesn't exist, create a new reaction with this data.
+     * 
+    **/
+    create: XOR<reactionCreateInput, reactionUncheckedCreateInput>
+    /**
+     * In case the reaction was found with the provided `where` argument, update it with this data.
+     * 
+    **/
+    update: XOR<reactionUpdateInput, reactionUncheckedUpdateInput>
+  }
+
+
+  /**
+   * reaction delete
+   */
+  export type reactionDeleteArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    /**
+     * Filter which reaction to delete.
+     * 
+    **/
+    where: reactionWhereUniqueInput
+  }
+
+
+  /**
+   * reaction deleteMany
+   */
+  export type reactionDeleteManyArgs = {
+    /**
+     * Filter which reactions to delete
+     * 
+    **/
+    where?: reactionWhereInput
+  }
+
+
+  /**
+   * reaction without action
+   */
+  export type reactionArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+  }
+
+
+
+  /**
+   * Model Comment
+   */
+
+
+  export type AggregateComment = {
+    _count: CommentCountAggregateOutputType | null
+    _avg: CommentAvgAggregateOutputType | null
+    _sum: CommentSumAggregateOutputType | null
+    _min: CommentMinAggregateOutputType | null
+    _max: CommentMaxAggregateOutputType | null
+  }
+
+  export type CommentAvgAggregateOutputType = {
+    id: number | null
+    threadId: number | null
+    userId: number | null
+    parentId: number | null
+  }
+
+  export type CommentSumAggregateOutputType = {
+    id: number | null
+    threadId: number | null
+    userId: number | null
+    parentId: number | null
+  }
+
+  export type CommentMinAggregateOutputType = {
+    id: number | null
+    content: string | null
+    threadId: number | null
+    userId: number | null
+    parentId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type CommentMaxAggregateOutputType = {
+    id: number | null
+    content: string | null
+    threadId: number | null
+    userId: number | null
+    parentId: number | null
+    isActive: boolean | null
+    isDelete: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type CommentCountAggregateOutputType = {
+    id: number
+    content: number
+    threadId: number
+    userId: number
+    parentId: number
+    isActive: number
+    isDelete: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type CommentAvgAggregateInputType = {
+    id?: true
+    threadId?: true
+    userId?: true
+    parentId?: true
+  }
+
+  export type CommentSumAggregateInputType = {
+    id?: true
+    threadId?: true
+    userId?: true
+    parentId?: true
+  }
+
+  export type CommentMinAggregateInputType = {
+    id?: true
+    content?: true
+    threadId?: true
+    userId?: true
+    parentId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type CommentMaxAggregateInputType = {
+    id?: true
+    content?: true
+    threadId?: true
+    userId?: true
+    parentId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type CommentCountAggregateInputType = {
+    id?: true
+    content?: true
+    threadId?: true
+    userId?: true
+    parentId?: true
+    isActive?: true
+    isDelete?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type CommentAggregateArgs = {
+    /**
+     * Filter which Comment to aggregate.
+     * 
+    **/
+    where?: CommentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Comments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<CommentOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     * 
+    **/
+    cursor?: CommentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Comments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Comments.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Comments
+    **/
+    _count?: true | CommentCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: CommentAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: CommentSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CommentMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CommentMaxAggregateInputType
+  }
+
+  export type GetCommentAggregateType<T extends CommentAggregateArgs> = {
+        [P in keyof T & keyof AggregateComment]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateComment[P]>
+      : GetScalarType<T[P], AggregateComment[P]>
+  }
+
+
+
+
+  export type CommentGroupByArgs = {
+    where?: CommentWhereInput
+    orderBy?: Enumerable<CommentOrderByWithAggregationInput>
+    by: Array<CommentScalarFieldEnum>
+    having?: CommentScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CommentCountAggregateInputType | true
+    _avg?: CommentAvgAggregateInputType
+    _sum?: CommentSumAggregateInputType
+    _min?: CommentMinAggregateInputType
+    _max?: CommentMaxAggregateInputType
+  }
+
+
+  export type CommentGroupByOutputType = {
+    id: number
+    content: string
+    threadId: number | null
+    userId: number | null
+    parentId: number | null
+    isActive: boolean
+    isDelete: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: CommentCountAggregateOutputType | null
+    _avg: CommentAvgAggregateOutputType | null
+    _sum: CommentSumAggregateOutputType | null
+    _min: CommentMinAggregateOutputType | null
+    _max: CommentMaxAggregateOutputType | null
+  }
+
+  type GetCommentGroupByPayload<T extends CommentGroupByArgs> = PrismaPromise<
+    Array<
+      PickArray<CommentGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CommentGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CommentGroupByOutputType[P]>
+            : GetScalarType<T[P], CommentGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CommentSelect = {
+    id?: boolean
+    content?: boolean
+    threadId?: boolean
+    thread?: boolean | ThreadArgs
+    userId?: boolean
+    user?: boolean | UserArgs
+    parentId?: boolean
+    parent?: boolean | CommentArgs
+    children?: boolean | CommentChildrenArgs
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    reaction?: boolean | CommentReactionArgs
+    _count?: boolean | CommentCountOutputTypeArgs
+  }
+
+
+  export type CommentInclude = {
+    thread?: boolean | ThreadArgs
+    user?: boolean | UserArgs
+    parent?: boolean | CommentArgs
+    children?: boolean | CommentChildrenArgs
+    reaction?: boolean | CommentReactionArgs
+    _count?: boolean | CommentCountOutputTypeArgs
+  } 
+
+  export type CommentGetPayload<S extends boolean | null | undefined | CommentArgs> =
+    S extends { select: any, include: any } ? 'Please either choose `select` or `include`' :
+    S extends true ? Comment :
+    S extends undefined ? never :
+    S extends { include: any } & (CommentArgs | CommentFindManyArgs)
+    ? Comment  & {
+    [P in TruthyKeys<S['include']>]:
+        P extends 'thread' ? ThreadGetPayload<S['include'][P]> | null :
+        P extends 'user' ? UserGetPayload<S['include'][P]> | null :
+        P extends 'parent' ? CommentGetPayload<S['include'][P]> | null :
+        P extends 'children' ? Array < CommentGetPayload<S['include'][P]>>  :
+        P extends 'reaction' ? Array < reactionGetPayload<S['include'][P]>>  :
+        P extends '_count' ? CommentCountOutputTypeGetPayload<S['include'][P]> :  never
+  } 
+    : S extends { select: any } & (CommentArgs | CommentFindManyArgs)
+      ? {
+    [P in TruthyKeys<S['select']>]:
+        P extends 'thread' ? ThreadGetPayload<S['select'][P]> | null :
+        P extends 'user' ? UserGetPayload<S['select'][P]> | null :
+        P extends 'parent' ? CommentGetPayload<S['select'][P]> | null :
+        P extends 'children' ? Array < CommentGetPayload<S['select'][P]>>  :
+        P extends 'reaction' ? Array < reactionGetPayload<S['select'][P]>>  :
+        P extends '_count' ? CommentCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof Comment ? Comment[P] : never
+  } 
+      : Comment
+
+
+  type CommentCountArgs = Merge<
+    Omit<CommentFindManyArgs, 'select' | 'include'> & {
+      select?: CommentCountAggregateInputType | true
+    }
+  >
+
+  export interface CommentDelegate<GlobalRejectSettings extends Prisma.RejectOnNotFound | Prisma.RejectPerOperation | false | undefined> {
+    /**
+     * Find zero or one Comment that matches the filter.
+     * @param {CommentFindUniqueArgs} args - Arguments to find a Comment
+     * @example
+     * // Get one Comment
+     * const comment = await prisma.comment.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUnique<T extends CommentFindUniqueArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args: SelectSubset<T, CommentFindUniqueArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findUnique', 'Comment'> extends True ? Prisma__CommentClient<CommentGetPayload<T>> : Prisma__CommentClient<CommentGetPayload<T> | null, null>
+
+    /**
+     * Find one Comment that matches the filter or throw an error  with `error.code='P2025'` 
+     *     if no matches were found.
+     * @param {CommentFindUniqueOrThrowArgs} args - Arguments to find a Comment
+     * @example
+     * // Get one Comment
+     * const comment = await prisma.comment.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findUniqueOrThrow<T extends CommentFindUniqueOrThrowArgs>(
+      args?: SelectSubset<T, CommentFindUniqueOrThrowArgs>
+    ): Prisma__CommentClient<CommentGetPayload<T>>
+
+    /**
+     * Find the first Comment that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommentFindFirstArgs} args - Arguments to find a Comment
+     * @example
+     * // Get one Comment
+     * const comment = await prisma.comment.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirst<T extends CommentFindFirstArgs,  LocalRejectSettings = T["rejectOnNotFound"] extends RejectOnNotFound ? T['rejectOnNotFound'] : undefined>(
+      args?: SelectSubset<T, CommentFindFirstArgs>
+    ): HasReject<GlobalRejectSettings, LocalRejectSettings, 'findFirst', 'Comment'> extends True ? Prisma__CommentClient<CommentGetPayload<T>> : Prisma__CommentClient<CommentGetPayload<T> | null, null>
+
+    /**
+     * Find the first Comment that matches the filter or
+     * throw `NotFoundError` if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommentFindFirstOrThrowArgs} args - Arguments to find a Comment
+     * @example
+     * // Get one Comment
+     * const comment = await prisma.comment.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+    **/
+    findFirstOrThrow<T extends CommentFindFirstOrThrowArgs>(
+      args?: SelectSubset<T, CommentFindFirstOrThrowArgs>
+    ): Prisma__CommentClient<CommentGetPayload<T>>
+
+    /**
+     * Find zero or more Comments that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommentFindManyArgs=} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Comments
+     * const comments = await prisma.comment.findMany()
+     * 
+     * // Get first 10 Comments
+     * const comments = await prisma.comment.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const commentWithIdOnly = await prisma.comment.findMany({ select: { id: true } })
+     * 
+    **/
+    findMany<T extends CommentFindManyArgs>(
+      args?: SelectSubset<T, CommentFindManyArgs>
+    ): PrismaPromise<Array<CommentGetPayload<T>>>
+
+    /**
+     * Create a Comment.
+     * @param {CommentCreateArgs} args - Arguments to create a Comment.
+     * @example
+     * // Create one Comment
+     * const Comment = await prisma.comment.create({
+     *   data: {
+     *     // ... data to create a Comment
+     *   }
+     * })
+     * 
+    **/
+    create<T extends CommentCreateArgs>(
+      args: SelectSubset<T, CommentCreateArgs>
+    ): Prisma__CommentClient<CommentGetPayload<T>>
+
+    /**
+     * Create many Comments.
+     *     @param {CommentCreateManyArgs} args - Arguments to create many Comments.
+     *     @example
+     *     // Create many Comments
+     *     const comment = await prisma.comment.createMany({
+     *       data: {
+     *         // ... provide data here
+     *       }
+     *     })
+     *     
+    **/
+    createMany<T extends CommentCreateManyArgs>(
+      args?: SelectSubset<T, CommentCreateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a Comment.
+     * @param {CommentDeleteArgs} args - Arguments to delete one Comment.
+     * @example
+     * // Delete one Comment
+     * const Comment = await prisma.comment.delete({
+     *   where: {
+     *     // ... filter to delete one Comment
+     *   }
+     * })
+     * 
+    **/
+    delete<T extends CommentDeleteArgs>(
+      args: SelectSubset<T, CommentDeleteArgs>
+    ): Prisma__CommentClient<CommentGetPayload<T>>
+
+    /**
+     * Update one Comment.
+     * @param {CommentUpdateArgs} args - Arguments to update one Comment.
+     * @example
+     * // Update one Comment
+     * const comment = await prisma.comment.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    update<T extends CommentUpdateArgs>(
+      args: SelectSubset<T, CommentUpdateArgs>
+    ): Prisma__CommentClient<CommentGetPayload<T>>
+
+    /**
+     * Delete zero or more Comments.
+     * @param {CommentDeleteManyArgs} args - Arguments to filter Comments to delete.
+     * @example
+     * // Delete a few Comments
+     * const { count } = await prisma.comment.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+    **/
+    deleteMany<T extends CommentDeleteManyArgs>(
+      args?: SelectSubset<T, CommentDeleteManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Comments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommentUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Comments
+     * const comment = await prisma.comment.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+    **/
+    updateMany<T extends CommentUpdateManyArgs>(
+      args: SelectSubset<T, CommentUpdateManyArgs>
+    ): PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one Comment.
+     * @param {CommentUpsertArgs} args - Arguments to update or create a Comment.
+     * @example
+     * // Update or create a Comment
+     * const comment = await prisma.comment.upsert({
+     *   create: {
+     *     // ... data to create a Comment
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Comment we want to update
+     *   }
+     * })
+    **/
+    upsert<T extends CommentUpsertArgs>(
+      args: SelectSubset<T, CommentUpsertArgs>
+    ): Prisma__CommentClient<CommentGetPayload<T>>
+
+    /**
+     * Count the number of Comments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommentCountArgs} args - Arguments to filter Comments to count.
+     * @example
+     * // Count the number of Comments
+     * const count = await prisma.comment.count({
+     *   where: {
+     *     // ... the filter for the Comments we want to count
+     *   }
+     * })
+    **/
+    count<T extends CommentCountArgs>(
+      args?: Subset<T, CommentCountArgs>,
+    ): PrismaPromise<
+      T extends _Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CommentCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Comment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CommentAggregateArgs>(args: Subset<T, CommentAggregateArgs>): PrismaPromise<GetCommentAggregateType<T>>
+
+    /**
+     * Group by Comment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommentGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CommentGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CommentGroupByArgs['orderBy'] }
+        : { orderBy?: CommentGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends TupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CommentGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCommentGroupByPayload<T> : PrismaPromise<InputErrors>
+
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Comment.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export class Prisma__CommentClient<T, Null = never> implements PrismaPromise<T> {
+    [prisma]: true;
+    private readonly _dmmf;
+    private readonly _fetcher;
+    private readonly _queryType;
+    private readonly _rootField;
+    private readonly _clientMethod;
+    private readonly _args;
+    private readonly _dataPath;
+    private readonly _errorFormat;
+    private readonly _measurePerformance?;
+    private _isList;
+    private _callsite;
+    private _requestPromise?;
+    constructor(_dmmf: runtime.DMMFClass, _fetcher: PrismaClientFetcher, _queryType: 'query' | 'mutation', _rootField: string, _clientMethod: string, _args: any, _dataPath: string[], _errorFormat: ErrorFormat, _measurePerformance?: boolean | undefined, _isList?: boolean);
+    readonly [Symbol.toStringTag]: 'PrismaClientPromise';
+
+    thread<T extends ThreadArgs= {}>(args?: Subset<T, ThreadArgs>): Prisma__ThreadClient<ThreadGetPayload<T> | Null>;
+
+    user<T extends UserArgs= {}>(args?: Subset<T, UserArgs>): Prisma__UserClient<UserGetPayload<T> | Null>;
+
+    parent<T extends CommentArgs= {}>(args?: Subset<T, CommentArgs>): Prisma__CommentClient<CommentGetPayload<T> | Null>;
+
+    children<T extends CommentChildrenArgs= {}>(args?: Subset<T, CommentChildrenArgs>): PrismaPromise<Array<CommentGetPayload<T>>| Null>;
+
+    reaction<T extends CommentReactionArgs= {}>(args?: Subset<T, CommentReactionArgs>): PrismaPromise<Array<reactionGetPayload<T>>| Null>;
+
+    private get _document();
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): Promise<TResult1 | TResult2>;
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): Promise<T | TResult>;
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): Promise<T>;
+  }
+
+
+
+  // Custom InputTypes
+
+  /**
+   * Comment base type for findUnique actions
+   */
+  export type CommentFindUniqueArgsBase = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * Filter, which Comment to fetch.
+     * 
+    **/
+    where: CommentWhereUniqueInput
+  }
+
+  /**
+   * Comment findUnique
+   */
+  export interface CommentFindUniqueArgs extends CommentFindUniqueArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findUniqueOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * Comment findUniqueOrThrow
+   */
+  export type CommentFindUniqueOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * Filter, which Comment to fetch.
+     * 
+    **/
+    where: CommentWhereUniqueInput
+  }
+
+
+  /**
+   * Comment base type for findFirst actions
+   */
+  export type CommentFindFirstArgsBase = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * Filter, which Comment to fetch.
+     * 
+    **/
+    where?: CommentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Comments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<CommentOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Comments.
+     * 
+    **/
+    cursor?: CommentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Comments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Comments.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Comments.
+     * 
+    **/
+    distinct?: Enumerable<CommentScalarFieldEnum>
+  }
+
+  /**
+   * Comment findFirst
+   */
+  export interface CommentFindFirstArgs extends CommentFindFirstArgsBase {
+   /**
+    * Throw an Error if query returns no results
+    * @deprecated since 4.0.0: use `findFirstOrThrow` method instead
+    */
+    rejectOnNotFound?: RejectOnNotFound
+  }
+      
+
+  /**
+   * Comment findFirstOrThrow
+   */
+  export type CommentFindFirstOrThrowArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * Filter, which Comment to fetch.
+     * 
+    **/
+    where?: CommentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Comments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<CommentOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Comments.
+     * 
+    **/
+    cursor?: CommentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Comments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Comments.
+     * 
+    **/
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Comments.
+     * 
+    **/
+    distinct?: Enumerable<CommentScalarFieldEnum>
+  }
+
+
+  /**
+   * Comment findMany
+   */
+  export type CommentFindManyArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * Filter, which Comments to fetch.
+     * 
+    **/
+    where?: CommentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Comments to fetch.
+     * 
+    **/
+    orderBy?: Enumerable<CommentOrderByWithRelationInput>
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Comments.
+     * 
+    **/
+    cursor?: CommentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Comments from the position of the cursor.
+     * 
+    **/
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Comments.
+     * 
+    **/
+    skip?: number
+    distinct?: Enumerable<CommentScalarFieldEnum>
+  }
+
+
+  /**
+   * Comment create
+   */
+  export type CommentCreateArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * The data needed to create a Comment.
+     * 
+    **/
+    data: XOR<CommentCreateInput, CommentUncheckedCreateInput>
+  }
+
+
+  /**
+   * Comment createMany
+   */
+  export type CommentCreateManyArgs = {
+    /**
+     * The data used to create many Comments.
+     * 
+    **/
+    data: Enumerable<CommentCreateManyInput>
+    skipDuplicates?: boolean
+  }
+
+
+  /**
+   * Comment update
+   */
+  export type CommentUpdateArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * The data needed to update a Comment.
+     * 
+    **/
+    data: XOR<CommentUpdateInput, CommentUncheckedUpdateInput>
+    /**
+     * Choose, which Comment to update.
+     * 
+    **/
+    where: CommentWhereUniqueInput
+  }
+
+
+  /**
+   * Comment updateMany
+   */
+  export type CommentUpdateManyArgs = {
+    /**
+     * The data used to update Comments.
+     * 
+    **/
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyInput>
+    /**
+     * Filter which Comments to update
+     * 
+    **/
+    where?: CommentWhereInput
+  }
+
+
+  /**
+   * Comment upsert
+   */
+  export type CommentUpsertArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * The filter to search for the Comment to update in case it exists.
+     * 
+    **/
+    where: CommentWhereUniqueInput
+    /**
+     * In case the Comment found by the `where` argument doesn't exist, create a new Comment with this data.
+     * 
+    **/
+    create: XOR<CommentCreateInput, CommentUncheckedCreateInput>
+    /**
+     * In case the Comment was found with the provided `where` argument, update it with this data.
+     * 
+    **/
+    update: XOR<CommentUpdateInput, CommentUncheckedUpdateInput>
+  }
+
+
+  /**
+   * Comment delete
+   */
+  export type CommentDeleteArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    /**
+     * Filter which Comment to delete.
+     * 
+    **/
+    where: CommentWhereUniqueInput
+  }
+
+
+  /**
+   * Comment deleteMany
+   */
+  export type CommentDeleteManyArgs = {
+    /**
+     * Filter which Comments to delete
+     * 
+    **/
+    where?: CommentWhereInput
+  }
+
+
+  /**
+   * Comment.children
+   */
+  export type CommentChildrenArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
+    where?: CommentWhereInput
+    orderBy?: Enumerable<CommentOrderByWithRelationInput>
+    cursor?: CommentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<CommentScalarFieldEnum>
+  }
+
+
+  /**
+   * Comment.reaction
+   */
+  export type CommentReactionArgs = {
+    /**
+     * Select specific fields to fetch from the reaction
+     * 
+    **/
+    select?: reactionSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: reactionInclude | null
+    where?: reactionWhereInput
+    orderBy?: Enumerable<reactionOrderByWithRelationInput>
+    cursor?: reactionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Enumerable<ReactionScalarFieldEnum>
+  }
+
+
+  /**
+   * Comment without action
+   */
+  export type CommentArgs = {
+    /**
+     * Select specific fields to fetch from the Comment
+     * 
+    **/
+    select?: CommentSelect | null
+    /**
+     * Choose, which related nodes to fetch as well.
+     * 
+    **/
+    include?: CommentInclude | null
   }
 
 
@@ -5363,6 +11320,21 @@ export namespace Prisma {
   // Based on
   // https://github.com/microsoft/TypeScript/issues/3192#issuecomment-261720275
 
+  export const CommentScalarFieldEnum: {
+    id: 'id',
+    content: 'content',
+    threadId: 'threadId',
+    userId: 'userId',
+    parentId: 'parentId',
+    isActive: 'isActive',
+    isDelete: 'isDelete',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type CommentScalarFieldEnum = (typeof CommentScalarFieldEnum)[keyof typeof CommentScalarFieldEnum]
+
+
   export const JsonNullValueFilter: {
     DbNull: typeof DbNull,
     JsonNull: typeof JsonNull,
@@ -5402,6 +11374,36 @@ export namespace Prisma {
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
+  export const ReactionScalarFieldEnum: {
+    id: 'id',
+    react: 'react',
+    threadId: 'threadId',
+    commentId: 'commentId',
+    userId: 'userId',
+    isActive: 'isActive',
+    isDelete: 'isDelete',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type ReactionScalarFieldEnum = (typeof ReactionScalarFieldEnum)[keyof typeof ReactionScalarFieldEnum]
+
+
+  export const RelationshipScalarFieldEnum: {
+    id: 'id',
+    content: 'content',
+    userId: 'userId',
+    friendId: 'friendId',
+    relationType: 'relationType',
+    isActive: 'isActive',
+    isDelete: 'isDelete',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type RelationshipScalarFieldEnum = (typeof RelationshipScalarFieldEnum)[keyof typeof RelationshipScalarFieldEnum]
+
+
   export const SessionScalarFieldEnum: {
     id: 'id',
     refreshToken: 'refreshToken',
@@ -5428,9 +11430,25 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const ThreadAttachmentsScalarFieldEnum: {
+    id: 'id',
+    link: 'link',
+    type: 'type',
+    threadId: 'threadId',
+    isActive: 'isActive',
+    isDelete: 'isDelete',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type ThreadAttachmentsScalarFieldEnum = (typeof ThreadAttachmentsScalarFieldEnum)[keyof typeof ThreadAttachmentsScalarFieldEnum]
+
+
   export const ThreadScalarFieldEnum: {
     id: 'id',
     content: 'content',
+    totalReact: 'totalReact',
+    totalComment: 'totalComment',
     authorId: 'authorId',
     privacy: 'privacy',
     destination: 'destination',
@@ -5463,6 +11481,7 @@ export namespace Prisma {
     gender: 'gender',
     birth: 'birth',
     avatar: 'avatar',
+    cover: 'cover',
     information: 'information',
     password: 'password',
     isActive: 'isActive',
@@ -5472,6 +11491,19 @@ export namespace Prisma {
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+  export const UserThreadsScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    threadId: 'threadId',
+    isActive: 'isActive',
+    isDelete: 'isDelete',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type UserThreadsScalarFieldEnum = (typeof UserThreadsScalarFieldEnum)[keyof typeof UserThreadsScalarFieldEnum]
 
 
   /**
@@ -5492,6 +11524,7 @@ export namespace Prisma {
     gender?: EnumGenderNullableFilter | Gender | null
     birth?: DateTimeNullableFilter | Date | string | null
     avatar?: StringNullableFilter | string | null
+    cover?: StringNullableFilter | string | null
     information?: JsonNullableFilter
     password?: StringFilter | string
     threadCreated?: ThreadListRelationFilter
@@ -5500,7 +11533,12 @@ export namespace Prisma {
     createdAt?: DateTimeFilter | Date | string
     updatedAt?: DateTimeFilter | Date | string
     session?: SessionListRelationFilter
+    user?: RelationshipListRelationFilter
+    relations?: RelationshipListRelationFilter
     monitoring?: MonitoringListRelationFilter
+    userThreads?: UserThreadsListRelationFilter
+    reaction?: ReactionListRelationFilter
+    Comment?: CommentListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -5513,6 +11551,7 @@ export namespace Prisma {
     gender?: SortOrder
     birth?: SortOrder
     avatar?: SortOrder
+    cover?: SortOrder
     information?: SortOrder
     password?: SortOrder
     threadCreated?: ThreadOrderByRelationAggregateInput
@@ -5521,7 +11560,12 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     session?: SessionOrderByRelationAggregateInput
+    user?: relationshipOrderByRelationAggregateInput
+    relations?: relationshipOrderByRelationAggregateInput
     monitoring?: MonitoringOrderByRelationAggregateInput
+    userThreads?: userThreadsOrderByRelationAggregateInput
+    reaction?: reactionOrderByRelationAggregateInput
+    Comment?: CommentOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = {
@@ -5540,6 +11584,7 @@ export namespace Prisma {
     gender?: SortOrder
     birth?: SortOrder
     avatar?: SortOrder
+    cover?: SortOrder
     information?: SortOrder
     password?: SortOrder
     isActive?: SortOrder
@@ -5566,8 +11611,135 @@ export namespace Prisma {
     gender?: EnumGenderNullableWithAggregatesFilter | Gender | null
     birth?: DateTimeNullableWithAggregatesFilter | Date | string | null
     avatar?: StringNullableWithAggregatesFilter | string | null
+    cover?: StringNullableWithAggregatesFilter | string | null
     information?: JsonNullableWithAggregatesFilter
     password?: StringWithAggregatesFilter | string
+    isActive?: BoolWithAggregatesFilter | boolean
+    isDelete?: BoolWithAggregatesFilter | boolean
+    createdAt?: DateTimeWithAggregatesFilter | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter | Date | string
+  }
+
+  export type relationshipWhereInput = {
+    AND?: Enumerable<relationshipWhereInput>
+    OR?: Enumerable<relationshipWhereInput>
+    NOT?: Enumerable<relationshipWhereInput>
+    id?: IntFilter | number
+    content?: StringFilter | string
+    userId?: IntNullableFilter | number | null
+    friendId?: IntNullableFilter | number | null
+    user?: XOR<UserRelationFilter, UserWhereInput> | null
+    friend?: XOR<UserRelationFilter, UserWhereInput> | null
+    relationType?: EnumRelationTypeFilter | RelationType
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type relationshipOrderByWithRelationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    userId?: SortOrder
+    friendId?: SortOrder
+    user?: UserOrderByWithRelationInput
+    friend?: UserOrderByWithRelationInput
+    relationType?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type relationshipWhereUniqueInput = {
+    id?: number
+  }
+
+  export type relationshipOrderByWithAggregationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    userId?: SortOrder
+    friendId?: SortOrder
+    relationType?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: relationshipCountOrderByAggregateInput
+    _avg?: relationshipAvgOrderByAggregateInput
+    _max?: relationshipMaxOrderByAggregateInput
+    _min?: relationshipMinOrderByAggregateInput
+    _sum?: relationshipSumOrderByAggregateInput
+  }
+
+  export type relationshipScalarWhereWithAggregatesInput = {
+    AND?: Enumerable<relationshipScalarWhereWithAggregatesInput>
+    OR?: Enumerable<relationshipScalarWhereWithAggregatesInput>
+    NOT?: Enumerable<relationshipScalarWhereWithAggregatesInput>
+    id?: IntWithAggregatesFilter | number
+    content?: StringWithAggregatesFilter | string
+    userId?: IntNullableWithAggregatesFilter | number | null
+    friendId?: IntNullableWithAggregatesFilter | number | null
+    relationType?: EnumRelationTypeWithAggregatesFilter | RelationType
+    isActive?: BoolWithAggregatesFilter | boolean
+    isDelete?: BoolWithAggregatesFilter | boolean
+    createdAt?: DateTimeWithAggregatesFilter | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter | Date | string
+  }
+
+  export type userThreadsWhereInput = {
+    AND?: Enumerable<userThreadsWhereInput>
+    OR?: Enumerable<userThreadsWhereInput>
+    NOT?: Enumerable<userThreadsWhereInput>
+    id?: IntFilter | number
+    userId?: IntNullableFilter | number | null
+    threadId?: IntNullableFilter | number | null
+    user?: XOR<UserRelationFilter, UserWhereInput> | null
+    thread?: XOR<ThreadRelationFilter, ThreadWhereInput> | null
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type userThreadsOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    threadId?: SortOrder
+    user?: UserOrderByWithRelationInput
+    thread?: ThreadOrderByWithRelationInput
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type userThreadsWhereUniqueInput = {
+    id?: number
+  }
+
+  export type userThreadsOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: userThreadsCountOrderByAggregateInput
+    _avg?: userThreadsAvgOrderByAggregateInput
+    _max?: userThreadsMaxOrderByAggregateInput
+    _min?: userThreadsMinOrderByAggregateInput
+    _sum?: userThreadsSumOrderByAggregateInput
+  }
+
+  export type userThreadsScalarWhereWithAggregatesInput = {
+    AND?: Enumerable<userThreadsScalarWhereWithAggregatesInput>
+    OR?: Enumerable<userThreadsScalarWhereWithAggregatesInput>
+    NOT?: Enumerable<userThreadsScalarWhereWithAggregatesInput>
+    id?: IntWithAggregatesFilter | number
+    userId?: IntNullableWithAggregatesFilter | number | null
+    threadId?: IntNullableWithAggregatesFilter | number | null
     isActive?: BoolWithAggregatesFilter | boolean
     isDelete?: BoolWithAggregatesFilter | boolean
     createdAt?: DateTimeWithAggregatesFilter | Date | string
@@ -5580,6 +11752,8 @@ export namespace Prisma {
     NOT?: Enumerable<ThreadWhereInput>
     id?: IntFilter | number
     content?: StringFilter | string
+    totalReact?: IntNullableFilter | number | null
+    totalComment?: IntNullableFilter | number | null
     authorId?: IntNullableFilter | number | null
     author?: XOR<UserRelationFilter, UserWhereInput> | null
     privacy?: EnumThreadPrivacyFilter | ThreadPrivacy
@@ -5588,11 +11762,17 @@ export namespace Prisma {
     isDelete?: BoolFilter | boolean
     createdAt?: DateTimeFilter | Date | string
     updatedAt?: DateTimeFilter | Date | string
+    user?: UserThreadsListRelationFilter
+    attachment?: ThreadAttachmentsListRelationFilter
+    reaction?: ReactionListRelationFilter
+    Comment?: CommentListRelationFilter
   }
 
   export type ThreadOrderByWithRelationInput = {
     id?: SortOrder
     content?: SortOrder
+    totalReact?: SortOrder
+    totalComment?: SortOrder
     authorId?: SortOrder
     author?: UserOrderByWithRelationInput
     privacy?: SortOrder
@@ -5601,6 +11781,10 @@ export namespace Prisma {
     isDelete?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    user?: userThreadsOrderByRelationAggregateInput
+    attachment?: threadAttachmentsOrderByRelationAggregateInput
+    reaction?: reactionOrderByRelationAggregateInput
+    Comment?: CommentOrderByRelationAggregateInput
   }
 
   export type ThreadWhereUniqueInput = {
@@ -5610,6 +11794,8 @@ export namespace Prisma {
   export type ThreadOrderByWithAggregationInput = {
     id?: SortOrder
     content?: SortOrder
+    totalReact?: SortOrder
+    totalComment?: SortOrder
     authorId?: SortOrder
     privacy?: SortOrder
     destination?: SortOrder
@@ -5630,9 +11816,214 @@ export namespace Prisma {
     NOT?: Enumerable<ThreadScalarWhereWithAggregatesInput>
     id?: IntWithAggregatesFilter | number
     content?: StringWithAggregatesFilter | string
+    totalReact?: IntNullableWithAggregatesFilter | number | null
+    totalComment?: IntNullableWithAggregatesFilter | number | null
     authorId?: IntNullableWithAggregatesFilter | number | null
     privacy?: EnumThreadPrivacyWithAggregatesFilter | ThreadPrivacy
     destination?: EnumDestinationThreadWithAggregatesFilter | DestinationThread
+    isActive?: BoolWithAggregatesFilter | boolean
+    isDelete?: BoolWithAggregatesFilter | boolean
+    createdAt?: DateTimeWithAggregatesFilter | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter | Date | string
+  }
+
+  export type threadAttachmentsWhereInput = {
+    AND?: Enumerable<threadAttachmentsWhereInput>
+    OR?: Enumerable<threadAttachmentsWhereInput>
+    NOT?: Enumerable<threadAttachmentsWhereInput>
+    id?: IntFilter | number
+    link?: StringFilter | string
+    type?: EnumAttachmentTypeFilter | AttachmentType
+    threadId?: IntNullableFilter | number | null
+    thread?: XOR<ThreadRelationFilter, ThreadWhereInput> | null
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type threadAttachmentsOrderByWithRelationInput = {
+    id?: SortOrder
+    link?: SortOrder
+    type?: SortOrder
+    threadId?: SortOrder
+    thread?: ThreadOrderByWithRelationInput
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type threadAttachmentsWhereUniqueInput = {
+    id?: number
+  }
+
+  export type threadAttachmentsOrderByWithAggregationInput = {
+    id?: SortOrder
+    link?: SortOrder
+    type?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: threadAttachmentsCountOrderByAggregateInput
+    _avg?: threadAttachmentsAvgOrderByAggregateInput
+    _max?: threadAttachmentsMaxOrderByAggregateInput
+    _min?: threadAttachmentsMinOrderByAggregateInput
+    _sum?: threadAttachmentsSumOrderByAggregateInput
+  }
+
+  export type threadAttachmentsScalarWhereWithAggregatesInput = {
+    AND?: Enumerable<threadAttachmentsScalarWhereWithAggregatesInput>
+    OR?: Enumerable<threadAttachmentsScalarWhereWithAggregatesInput>
+    NOT?: Enumerable<threadAttachmentsScalarWhereWithAggregatesInput>
+    id?: IntWithAggregatesFilter | number
+    link?: StringWithAggregatesFilter | string
+    type?: EnumAttachmentTypeWithAggregatesFilter | AttachmentType
+    threadId?: IntNullableWithAggregatesFilter | number | null
+    isActive?: BoolWithAggregatesFilter | boolean
+    isDelete?: BoolWithAggregatesFilter | boolean
+    createdAt?: DateTimeWithAggregatesFilter | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter | Date | string
+  }
+
+  export type reactionWhereInput = {
+    AND?: Enumerable<reactionWhereInput>
+    OR?: Enumerable<reactionWhereInput>
+    NOT?: Enumerable<reactionWhereInput>
+    id?: IntFilter | number
+    react?: EnumReactTypeFilter | ReactType
+    threadId?: IntNullableFilter | number | null
+    thread?: XOR<ThreadRelationFilter, ThreadWhereInput> | null
+    commentId?: IntNullableFilter | number | null
+    comment?: XOR<CommentRelationFilter, CommentWhereInput> | null
+    userId?: IntNullableFilter | number | null
+    user?: XOR<UserRelationFilter, UserWhereInput> | null
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type reactionOrderByWithRelationInput = {
+    id?: SortOrder
+    react?: SortOrder
+    threadId?: SortOrder
+    thread?: ThreadOrderByWithRelationInput
+    commentId?: SortOrder
+    comment?: CommentOrderByWithRelationInput
+    userId?: SortOrder
+    user?: UserOrderByWithRelationInput
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type reactionWhereUniqueInput = {
+    id?: number
+  }
+
+  export type reactionOrderByWithAggregationInput = {
+    id?: SortOrder
+    react?: SortOrder
+    threadId?: SortOrder
+    commentId?: SortOrder
+    userId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: reactionCountOrderByAggregateInput
+    _avg?: reactionAvgOrderByAggregateInput
+    _max?: reactionMaxOrderByAggregateInput
+    _min?: reactionMinOrderByAggregateInput
+    _sum?: reactionSumOrderByAggregateInput
+  }
+
+  export type reactionScalarWhereWithAggregatesInput = {
+    AND?: Enumerable<reactionScalarWhereWithAggregatesInput>
+    OR?: Enumerable<reactionScalarWhereWithAggregatesInput>
+    NOT?: Enumerable<reactionScalarWhereWithAggregatesInput>
+    id?: IntWithAggregatesFilter | number
+    react?: EnumReactTypeWithAggregatesFilter | ReactType
+    threadId?: IntNullableWithAggregatesFilter | number | null
+    commentId?: IntNullableWithAggregatesFilter | number | null
+    userId?: IntNullableWithAggregatesFilter | number | null
+    isActive?: BoolWithAggregatesFilter | boolean
+    isDelete?: BoolWithAggregatesFilter | boolean
+    createdAt?: DateTimeWithAggregatesFilter | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter | Date | string
+  }
+
+  export type CommentWhereInput = {
+    AND?: Enumerable<CommentWhereInput>
+    OR?: Enumerable<CommentWhereInput>
+    NOT?: Enumerable<CommentWhereInput>
+    id?: IntFilter | number
+    content?: StringFilter | string
+    threadId?: IntNullableFilter | number | null
+    thread?: XOR<ThreadRelationFilter, ThreadWhereInput> | null
+    userId?: IntNullableFilter | number | null
+    user?: XOR<UserRelationFilter, UserWhereInput> | null
+    parentId?: IntNullableFilter | number | null
+    parent?: XOR<CommentRelationFilter, CommentWhereInput> | null
+    children?: CommentListRelationFilter
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+    reaction?: ReactionListRelationFilter
+  }
+
+  export type CommentOrderByWithRelationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    threadId?: SortOrder
+    thread?: ThreadOrderByWithRelationInput
+    userId?: SortOrder
+    user?: UserOrderByWithRelationInput
+    parentId?: SortOrder
+    parent?: CommentOrderByWithRelationInput
+    children?: CommentOrderByRelationAggregateInput
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    reaction?: reactionOrderByRelationAggregateInput
+  }
+
+  export type CommentWhereUniqueInput = {
+    id?: number
+  }
+
+  export type CommentOrderByWithAggregationInput = {
+    id?: SortOrder
+    content?: SortOrder
+    threadId?: SortOrder
+    userId?: SortOrder
+    parentId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: CommentCountOrderByAggregateInput
+    _avg?: CommentAvgOrderByAggregateInput
+    _max?: CommentMaxOrderByAggregateInput
+    _min?: CommentMinOrderByAggregateInput
+    _sum?: CommentSumOrderByAggregateInput
+  }
+
+  export type CommentScalarWhereWithAggregatesInput = {
+    AND?: Enumerable<CommentScalarWhereWithAggregatesInput>
+    OR?: Enumerable<CommentScalarWhereWithAggregatesInput>
+    NOT?: Enumerable<CommentScalarWhereWithAggregatesInput>
+    id?: IntWithAggregatesFilter | number
+    content?: StringWithAggregatesFilter | string
+    threadId?: IntNullableWithAggregatesFilter | number | null
+    userId?: IntNullableWithAggregatesFilter | number | null
+    parentId?: IntNullableWithAggregatesFilter | number | null
     isActive?: BoolWithAggregatesFilter | boolean
     isDelete?: BoolWithAggregatesFilter | boolean
     createdAt?: DateTimeWithAggregatesFilter | Date | string
@@ -5786,6 +12177,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
@@ -5794,7 +12186,12 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     session?: SessionCreateNestedManyWithoutUserInput
+    user?: relationshipCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
     monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -5807,6 +12204,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
@@ -5815,7 +12213,12 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
     monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -5827,6 +12230,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
@@ -5835,7 +12239,12 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     session?: SessionUpdateManyWithoutUserNestedInput
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
     monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -5848,6 +12257,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
@@ -5856,7 +12266,12 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
     monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -5869,6 +12284,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     isActive?: boolean
@@ -5886,6 +12302,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
@@ -5904,6 +12321,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
@@ -5912,8 +12330,154 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type relationshipCreateInput = {
+    content: string
+    user?: UserCreateNestedOneWithoutUserInput
+    friend?: UserCreateNestedOneWithoutRelationsInput
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipUncheckedCreateInput = {
+    id?: number
+    content: string
+    userId?: number | null
+    friendId?: number | null
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipUpdateInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    user?: UserUpdateOneWithoutUserNestedInput
+    friend?: UserUpdateOneWithoutRelationsNestedInput
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    friendId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipCreateManyInput = {
+    id?: number
+    content: string
+    userId?: number | null
+    friendId?: number | null
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipUpdateManyMutationInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    friendId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsCreateInput = {
+    user?: UserCreateNestedOneWithoutUserThreadsInput
+    thread?: ThreadCreateNestedOneWithoutUserInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsUncheckedCreateInput = {
+    id?: number
+    userId?: number | null
+    threadId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsUpdateInput = {
+    user?: UserUpdateOneWithoutUserThreadsNestedInput
+    thread?: ThreadUpdateOneWithoutUserNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsCreateManyInput = {
+    id?: number
+    userId?: number | null
+    threadId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsUpdateManyMutationInput = {
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type ThreadCreateInput = {
     content: string
+    totalReact?: number | null
+    totalComment?: number | null
     author?: UserCreateNestedOneWithoutThreadCreatedInput
     privacy?: ThreadPrivacy
     destination?: DestinationThread
@@ -5921,11 +12485,17 @@ export namespace Prisma {
     isDelete?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    user?: userThreadsCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsCreateNestedManyWithoutThreadInput
+    reaction?: reactionCreateNestedManyWithoutThreadInput
+    Comment?: CommentCreateNestedManyWithoutThreadInput
   }
 
   export type ThreadUncheckedCreateInput = {
     id?: number
     content: string
+    totalReact?: number | null
+    totalComment?: number | null
     authorId?: number | null
     privacy?: ThreadPrivacy
     destination?: DestinationThread
@@ -5933,10 +12503,16 @@ export namespace Prisma {
     isDelete?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    user?: userThreadsUncheckedCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsUncheckedCreateNestedManyWithoutThreadInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutThreadInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutThreadInput
   }
 
   export type ThreadUpdateInput = {
     content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
     author?: UserUpdateOneWithoutThreadCreatedNestedInput
     privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
     destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
@@ -5944,11 +12520,17 @@ export namespace Prisma {
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUpdateManyWithoutThreadNestedInput
   }
 
   export type ThreadUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
     authorId?: NullableIntFieldUpdateOperationsInput | number | null
     privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
     destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
@@ -5956,11 +12538,17 @@ export namespace Prisma {
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUncheckedUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUncheckedUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutThreadNestedInput
   }
 
   export type ThreadCreateManyInput = {
     id?: number
     content: string
+    totalReact?: number | null
+    totalComment?: number | null
     authorId?: number | null
     privacy?: ThreadPrivacy
     destination?: DestinationThread
@@ -5972,6 +12560,8 @@ export namespace Prisma {
 
   export type ThreadUpdateManyMutationInput = {
     content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
     privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
     destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
     isActive?: BoolFieldUpdateOperationsInput | boolean
@@ -5983,9 +12573,248 @@ export namespace Prisma {
   export type ThreadUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
     authorId?: NullableIntFieldUpdateOperationsInput | number | null
     privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
     destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type threadAttachmentsCreateInput = {
+    link: string
+    type: AttachmentType
+    thread?: ThreadCreateNestedOneWithoutAttachmentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type threadAttachmentsUncheckedCreateInput = {
+    id?: number
+    link: string
+    type: AttachmentType
+    threadId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type threadAttachmentsUpdateInput = {
+    link?: StringFieldUpdateOperationsInput | string
+    type?: EnumAttachmentTypeFieldUpdateOperationsInput | AttachmentType
+    thread?: ThreadUpdateOneWithoutAttachmentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type threadAttachmentsUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    link?: StringFieldUpdateOperationsInput | string
+    type?: EnumAttachmentTypeFieldUpdateOperationsInput | AttachmentType
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type threadAttachmentsCreateManyInput = {
+    id?: number
+    link: string
+    type: AttachmentType
+    threadId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type threadAttachmentsUpdateManyMutationInput = {
+    link?: StringFieldUpdateOperationsInput | string
+    type?: EnumAttachmentTypeFieldUpdateOperationsInput | AttachmentType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type threadAttachmentsUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    link?: StringFieldUpdateOperationsInput | string
+    type?: EnumAttachmentTypeFieldUpdateOperationsInput | AttachmentType
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionCreateInput = {
+    react: ReactType
+    thread?: ThreadCreateNestedOneWithoutReactionInput
+    comment?: CommentCreateNestedOneWithoutReactionInput
+    user?: UserCreateNestedOneWithoutReactionInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionUncheckedCreateInput = {
+    id?: number
+    react: ReactType
+    threadId?: number | null
+    commentId?: number | null
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionUpdateInput = {
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    thread?: ThreadUpdateOneWithoutReactionNestedInput
+    comment?: CommentUpdateOneWithoutReactionNestedInput
+    user?: UserUpdateOneWithoutReactionNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    commentId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionCreateManyInput = {
+    id?: number
+    react: ReactType
+    threadId?: number | null
+    commentId?: number | null
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionUpdateManyMutationInput = {
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    commentId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommentCreateInput = {
+    content: string
+    thread?: ThreadCreateNestedOneWithoutCommentInput
+    user?: UserCreateNestedOneWithoutCommentInput
+    parent?: CommentCreateNestedOneWithoutChildrenInput
+    children?: CommentCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUncheckedCreateInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    userId?: number | null
+    parentId?: number | null
+    children?: CommentUncheckedCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionUncheckedCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUpdateInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    thread?: ThreadUpdateOneWithoutCommentNestedInput
+    user?: UserUpdateOneWithoutCommentNestedInput
+    parent?: CommentUpdateOneWithoutChildrenNestedInput
+    children?: CommentUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    children?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUncheckedUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentCreateManyInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    userId?: number | null
+    parentId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommentUpdateManyMutationInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommentUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -6275,10 +13104,34 @@ export namespace Prisma {
     none?: SessionWhereInput
   }
 
+  export type RelationshipListRelationFilter = {
+    every?: relationshipWhereInput
+    some?: relationshipWhereInput
+    none?: relationshipWhereInput
+  }
+
   export type MonitoringListRelationFilter = {
     every?: MonitoringWhereInput
     some?: MonitoringWhereInput
     none?: MonitoringWhereInput
+  }
+
+  export type UserThreadsListRelationFilter = {
+    every?: userThreadsWhereInput
+    some?: userThreadsWhereInput
+    none?: userThreadsWhereInput
+  }
+
+  export type ReactionListRelationFilter = {
+    every?: reactionWhereInput
+    some?: reactionWhereInput
+    none?: reactionWhereInput
+  }
+
+  export type CommentListRelationFilter = {
+    every?: CommentWhereInput
+    some?: CommentWhereInput
+    none?: CommentWhereInput
   }
 
   export type ThreadOrderByRelationAggregateInput = {
@@ -6289,7 +13142,23 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
+  export type relationshipOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type MonitoringOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type userThreadsOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type reactionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type CommentOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -6303,6 +13172,7 @@ export namespace Prisma {
     gender?: SortOrder
     birth?: SortOrder
     avatar?: SortOrder
+    cover?: SortOrder
     information?: SortOrder
     password?: SortOrder
     isActive?: SortOrder
@@ -6325,6 +13195,7 @@ export namespace Prisma {
     gender?: SortOrder
     birth?: SortOrder
     avatar?: SortOrder
+    cover?: SortOrder
     password?: SortOrder
     isActive?: SortOrder
     isDelete?: SortOrder
@@ -6342,6 +13213,7 @@ export namespace Prisma {
     gender?: SortOrder
     birth?: SortOrder
     avatar?: SortOrder
+    cover?: SortOrder
     password?: SortOrder
     isActive?: SortOrder
     isDelete?: SortOrder
@@ -6492,64 +13364,59 @@ export namespace Prisma {
     isNot?: UserWhereInput
   }
 
-  export type EnumThreadPrivacyFilter = {
-    equals?: ThreadPrivacy
-    in?: Enumerable<ThreadPrivacy>
-    notIn?: Enumerable<ThreadPrivacy>
-    not?: NestedEnumThreadPrivacyFilter | ThreadPrivacy
+  export type EnumRelationTypeFilter = {
+    equals?: RelationType
+    in?: Enumerable<RelationType>
+    notIn?: Enumerable<RelationType>
+    not?: NestedEnumRelationTypeFilter | RelationType
   }
 
-  export type EnumDestinationThreadFilter = {
-    equals?: DestinationThread
-    in?: Enumerable<DestinationThread>
-    notIn?: Enumerable<DestinationThread>
-    not?: NestedEnumDestinationThreadFilter | DestinationThread
-  }
-
-  export type ThreadCountOrderByAggregateInput = {
+  export type relationshipCountOrderByAggregateInput = {
     id?: SortOrder
     content?: SortOrder
-    authorId?: SortOrder
-    privacy?: SortOrder
-    destination?: SortOrder
+    userId?: SortOrder
+    friendId?: SortOrder
+    relationType?: SortOrder
     isActive?: SortOrder
     isDelete?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
-  export type ThreadAvgOrderByAggregateInput = {
+  export type relationshipAvgOrderByAggregateInput = {
     id?: SortOrder
-    authorId?: SortOrder
+    userId?: SortOrder
+    friendId?: SortOrder
   }
 
-  export type ThreadMaxOrderByAggregateInput = {
+  export type relationshipMaxOrderByAggregateInput = {
     id?: SortOrder
     content?: SortOrder
-    authorId?: SortOrder
-    privacy?: SortOrder
-    destination?: SortOrder
+    userId?: SortOrder
+    friendId?: SortOrder
+    relationType?: SortOrder
     isActive?: SortOrder
     isDelete?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
-  export type ThreadMinOrderByAggregateInput = {
+  export type relationshipMinOrderByAggregateInput = {
     id?: SortOrder
     content?: SortOrder
-    authorId?: SortOrder
-    privacy?: SortOrder
-    destination?: SortOrder
+    userId?: SortOrder
+    friendId?: SortOrder
+    relationType?: SortOrder
     isActive?: SortOrder
     isDelete?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
 
-  export type ThreadSumOrderByAggregateInput = {
+  export type relationshipSumOrderByAggregateInput = {
     id?: SortOrder
-    authorId?: SortOrder
+    userId?: SortOrder
+    friendId?: SortOrder
   }
 
   export type IntNullableWithAggregatesFilter = {
@@ -6566,6 +13433,143 @@ export namespace Prisma {
     _sum?: NestedIntNullableFilter
     _min?: NestedIntNullableFilter
     _max?: NestedIntNullableFilter
+  }
+
+  export type EnumRelationTypeWithAggregatesFilter = {
+    equals?: RelationType
+    in?: Enumerable<RelationType>
+    notIn?: Enumerable<RelationType>
+    not?: NestedEnumRelationTypeWithAggregatesFilter | RelationType
+    _count?: NestedIntFilter
+    _min?: NestedEnumRelationTypeFilter
+    _max?: NestedEnumRelationTypeFilter
+  }
+
+  export type ThreadRelationFilter = {
+    is?: ThreadWhereInput | null
+    isNot?: ThreadWhereInput | null
+  }
+
+  export type userThreadsCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type userThreadsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    threadId?: SortOrder
+  }
+
+  export type userThreadsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type userThreadsMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type userThreadsSumOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    threadId?: SortOrder
+  }
+
+  export type EnumThreadPrivacyFilter = {
+    equals?: ThreadPrivacy
+    in?: Enumerable<ThreadPrivacy>
+    notIn?: Enumerable<ThreadPrivacy>
+    not?: NestedEnumThreadPrivacyFilter | ThreadPrivacy
+  }
+
+  export type EnumDestinationThreadFilter = {
+    equals?: DestinationThread
+    in?: Enumerable<DestinationThread>
+    notIn?: Enumerable<DestinationThread>
+    not?: NestedEnumDestinationThreadFilter | DestinationThread
+  }
+
+  export type ThreadAttachmentsListRelationFilter = {
+    every?: threadAttachmentsWhereInput
+    some?: threadAttachmentsWhereInput
+    none?: threadAttachmentsWhereInput
+  }
+
+  export type threadAttachmentsOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ThreadCountOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    totalReact?: SortOrder
+    totalComment?: SortOrder
+    authorId?: SortOrder
+    privacy?: SortOrder
+    destination?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ThreadAvgOrderByAggregateInput = {
+    id?: SortOrder
+    totalReact?: SortOrder
+    totalComment?: SortOrder
+    authorId?: SortOrder
+  }
+
+  export type ThreadMaxOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    totalReact?: SortOrder
+    totalComment?: SortOrder
+    authorId?: SortOrder
+    privacy?: SortOrder
+    destination?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ThreadMinOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    totalReact?: SortOrder
+    totalComment?: SortOrder
+    authorId?: SortOrder
+    privacy?: SortOrder
+    destination?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ThreadSumOrderByAggregateInput = {
+    id?: SortOrder
+    totalReact?: SortOrder
+    totalComment?: SortOrder
+    authorId?: SortOrder
   }
 
   export type EnumThreadPrivacyWithAggregatesFilter = {
@@ -6586,6 +13590,188 @@ export namespace Prisma {
     _count?: NestedIntFilter
     _min?: NestedEnumDestinationThreadFilter
     _max?: NestedEnumDestinationThreadFilter
+  }
+
+  export type EnumAttachmentTypeFilter = {
+    equals?: AttachmentType
+    in?: Enumerable<AttachmentType>
+    notIn?: Enumerable<AttachmentType>
+    not?: NestedEnumAttachmentTypeFilter | AttachmentType
+  }
+
+  export type threadAttachmentsCountOrderByAggregateInput = {
+    id?: SortOrder
+    link?: SortOrder
+    type?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type threadAttachmentsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    threadId?: SortOrder
+  }
+
+  export type threadAttachmentsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    link?: SortOrder
+    type?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type threadAttachmentsMinOrderByAggregateInput = {
+    id?: SortOrder
+    link?: SortOrder
+    type?: SortOrder
+    threadId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type threadAttachmentsSumOrderByAggregateInput = {
+    id?: SortOrder
+    threadId?: SortOrder
+  }
+
+  export type EnumAttachmentTypeWithAggregatesFilter = {
+    equals?: AttachmentType
+    in?: Enumerable<AttachmentType>
+    notIn?: Enumerable<AttachmentType>
+    not?: NestedEnumAttachmentTypeWithAggregatesFilter | AttachmentType
+    _count?: NestedIntFilter
+    _min?: NestedEnumAttachmentTypeFilter
+    _max?: NestedEnumAttachmentTypeFilter
+  }
+
+  export type EnumReactTypeFilter = {
+    equals?: ReactType
+    in?: Enumerable<ReactType>
+    notIn?: Enumerable<ReactType>
+    not?: NestedEnumReactTypeFilter | ReactType
+  }
+
+  export type CommentRelationFilter = {
+    is?: CommentWhereInput | null
+    isNot?: CommentWhereInput | null
+  }
+
+  export type reactionCountOrderByAggregateInput = {
+    id?: SortOrder
+    react?: SortOrder
+    threadId?: SortOrder
+    commentId?: SortOrder
+    userId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type reactionAvgOrderByAggregateInput = {
+    id?: SortOrder
+    threadId?: SortOrder
+    commentId?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type reactionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    react?: SortOrder
+    threadId?: SortOrder
+    commentId?: SortOrder
+    userId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type reactionMinOrderByAggregateInput = {
+    id?: SortOrder
+    react?: SortOrder
+    threadId?: SortOrder
+    commentId?: SortOrder
+    userId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type reactionSumOrderByAggregateInput = {
+    id?: SortOrder
+    threadId?: SortOrder
+    commentId?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type EnumReactTypeWithAggregatesFilter = {
+    equals?: ReactType
+    in?: Enumerable<ReactType>
+    notIn?: Enumerable<ReactType>
+    not?: NestedEnumReactTypeWithAggregatesFilter | ReactType
+    _count?: NestedIntFilter
+    _min?: NestedEnumReactTypeFilter
+    _max?: NestedEnumReactTypeFilter
+  }
+
+  export type CommentCountOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    threadId?: SortOrder
+    userId?: SortOrder
+    parentId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CommentAvgOrderByAggregateInput = {
+    id?: SortOrder
+    threadId?: SortOrder
+    userId?: SortOrder
+    parentId?: SortOrder
+  }
+
+  export type CommentMaxOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    threadId?: SortOrder
+    userId?: SortOrder
+    parentId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CommentMinOrderByAggregateInput = {
+    id?: SortOrder
+    content?: SortOrder
+    threadId?: SortOrder
+    userId?: SortOrder
+    parentId?: SortOrder
+    isActive?: SortOrder
+    isDelete?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CommentSumOrderByAggregateInput = {
+    id?: SortOrder
+    threadId?: SortOrder
+    userId?: SortOrder
+    parentId?: SortOrder
   }
 
   export type SessionCountOrderByAggregateInput = {
@@ -6715,11 +13901,46 @@ export namespace Prisma {
     connect?: Enumerable<SessionWhereUniqueInput>
   }
 
+  export type relationshipCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutUserInput>, Enumerable<relationshipUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutUserInput>
+    createMany?: relationshipCreateManyUserInputEnvelope
+    connect?: Enumerable<relationshipWhereUniqueInput>
+  }
+
+  export type relationshipCreateNestedManyWithoutFriendInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutFriendInput>, Enumerable<relationshipUncheckedCreateWithoutFriendInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutFriendInput>
+    createMany?: relationshipCreateManyFriendInputEnvelope
+    connect?: Enumerable<relationshipWhereUniqueInput>
+  }
+
   export type MonitoringCreateNestedManyWithoutUserInput = {
     create?: XOR<Enumerable<MonitoringCreateWithoutUserInput>, Enumerable<MonitoringUncheckedCreateWithoutUserInput>>
     connectOrCreate?: Enumerable<MonitoringCreateOrConnectWithoutUserInput>
     createMany?: MonitoringCreateManyUserInputEnvelope
     connect?: Enumerable<MonitoringWhereUniqueInput>
+  }
+
+  export type userThreadsCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutUserInput>, Enumerable<userThreadsUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutUserInput>
+    createMany?: userThreadsCreateManyUserInputEnvelope
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+  }
+
+  export type reactionCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutUserInput>, Enumerable<reactionUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutUserInput>
+    createMany?: reactionCreateManyUserInputEnvelope
+    connect?: Enumerable<reactionWhereUniqueInput>
+  }
+
+  export type CommentCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutUserInput>, Enumerable<CommentUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutUserInput>
+    createMany?: CommentCreateManyUserInputEnvelope
+    connect?: Enumerable<CommentWhereUniqueInput>
   }
 
   export type ThreadUncheckedCreateNestedManyWithoutAuthorInput = {
@@ -6736,11 +13957,46 @@ export namespace Prisma {
     connect?: Enumerable<SessionWhereUniqueInput>
   }
 
+  export type relationshipUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutUserInput>, Enumerable<relationshipUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutUserInput>
+    createMany?: relationshipCreateManyUserInputEnvelope
+    connect?: Enumerable<relationshipWhereUniqueInput>
+  }
+
+  export type relationshipUncheckedCreateNestedManyWithoutFriendInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutFriendInput>, Enumerable<relationshipUncheckedCreateWithoutFriendInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutFriendInput>
+    createMany?: relationshipCreateManyFriendInputEnvelope
+    connect?: Enumerable<relationshipWhereUniqueInput>
+  }
+
   export type MonitoringUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<Enumerable<MonitoringCreateWithoutUserInput>, Enumerable<MonitoringUncheckedCreateWithoutUserInput>>
     connectOrCreate?: Enumerable<MonitoringCreateOrConnectWithoutUserInput>
     createMany?: MonitoringCreateManyUserInputEnvelope
     connect?: Enumerable<MonitoringWhereUniqueInput>
+  }
+
+  export type userThreadsUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutUserInput>, Enumerable<userThreadsUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutUserInput>
+    createMany?: userThreadsCreateManyUserInputEnvelope
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+  }
+
+  export type reactionUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutUserInput>, Enumerable<reactionUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutUserInput>
+    createMany?: reactionCreateManyUserInputEnvelope
+    connect?: Enumerable<reactionWhereUniqueInput>
+  }
+
+  export type CommentUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutUserInput>, Enumerable<CommentUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutUserInput>
+    createMany?: CommentCreateManyUserInputEnvelope
+    connect?: Enumerable<CommentWhereUniqueInput>
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
@@ -6795,6 +14051,34 @@ export namespace Prisma {
     deleteMany?: Enumerable<SessionScalarWhereInput>
   }
 
+  export type relationshipUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutUserInput>, Enumerable<relationshipUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<relationshipUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: relationshipCreateManyUserInputEnvelope
+    set?: Enumerable<relationshipWhereUniqueInput>
+    disconnect?: Enumerable<relationshipWhereUniqueInput>
+    delete?: Enumerable<relationshipWhereUniqueInput>
+    connect?: Enumerable<relationshipWhereUniqueInput>
+    update?: Enumerable<relationshipUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<relationshipUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<relationshipScalarWhereInput>
+  }
+
+  export type relationshipUpdateManyWithoutFriendNestedInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutFriendInput>, Enumerable<relationshipUncheckedCreateWithoutFriendInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutFriendInput>
+    upsert?: Enumerable<relationshipUpsertWithWhereUniqueWithoutFriendInput>
+    createMany?: relationshipCreateManyFriendInputEnvelope
+    set?: Enumerable<relationshipWhereUniqueInput>
+    disconnect?: Enumerable<relationshipWhereUniqueInput>
+    delete?: Enumerable<relationshipWhereUniqueInput>
+    connect?: Enumerable<relationshipWhereUniqueInput>
+    update?: Enumerable<relationshipUpdateWithWhereUniqueWithoutFriendInput>
+    updateMany?: Enumerable<relationshipUpdateManyWithWhereWithoutFriendInput>
+    deleteMany?: Enumerable<relationshipScalarWhereInput>
+  }
+
   export type MonitoringUpdateManyWithoutUserNestedInput = {
     create?: XOR<Enumerable<MonitoringCreateWithoutUserInput>, Enumerable<MonitoringUncheckedCreateWithoutUserInput>>
     connectOrCreate?: Enumerable<MonitoringCreateOrConnectWithoutUserInput>
@@ -6807,6 +14091,48 @@ export namespace Prisma {
     update?: Enumerable<MonitoringUpdateWithWhereUniqueWithoutUserInput>
     updateMany?: Enumerable<MonitoringUpdateManyWithWhereWithoutUserInput>
     deleteMany?: Enumerable<MonitoringScalarWhereInput>
+  }
+
+  export type userThreadsUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutUserInput>, Enumerable<userThreadsUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<userThreadsUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: userThreadsCreateManyUserInputEnvelope
+    set?: Enumerable<userThreadsWhereUniqueInput>
+    disconnect?: Enumerable<userThreadsWhereUniqueInput>
+    delete?: Enumerable<userThreadsWhereUniqueInput>
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+    update?: Enumerable<userThreadsUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<userThreadsUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<userThreadsScalarWhereInput>
+  }
+
+  export type reactionUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutUserInput>, Enumerable<reactionUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<reactionUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: reactionCreateManyUserInputEnvelope
+    set?: Enumerable<reactionWhereUniqueInput>
+    disconnect?: Enumerable<reactionWhereUniqueInput>
+    delete?: Enumerable<reactionWhereUniqueInput>
+    connect?: Enumerable<reactionWhereUniqueInput>
+    update?: Enumerable<reactionUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<reactionUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<reactionScalarWhereInput>
+  }
+
+  export type CommentUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutUserInput>, Enumerable<CommentUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<CommentUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: CommentCreateManyUserInputEnvelope
+    set?: Enumerable<CommentWhereUniqueInput>
+    disconnect?: Enumerable<CommentWhereUniqueInput>
+    delete?: Enumerable<CommentWhereUniqueInput>
+    connect?: Enumerable<CommentWhereUniqueInput>
+    update?: Enumerable<CommentUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<CommentUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<CommentScalarWhereInput>
   }
 
   export type IntFieldUpdateOperationsInput = {
@@ -6845,6 +14171,34 @@ export namespace Prisma {
     deleteMany?: Enumerable<SessionScalarWhereInput>
   }
 
+  export type relationshipUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutUserInput>, Enumerable<relationshipUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<relationshipUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: relationshipCreateManyUserInputEnvelope
+    set?: Enumerable<relationshipWhereUniqueInput>
+    disconnect?: Enumerable<relationshipWhereUniqueInput>
+    delete?: Enumerable<relationshipWhereUniqueInput>
+    connect?: Enumerable<relationshipWhereUniqueInput>
+    update?: Enumerable<relationshipUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<relationshipUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<relationshipScalarWhereInput>
+  }
+
+  export type relationshipUncheckedUpdateManyWithoutFriendNestedInput = {
+    create?: XOR<Enumerable<relationshipCreateWithoutFriendInput>, Enumerable<relationshipUncheckedCreateWithoutFriendInput>>
+    connectOrCreate?: Enumerable<relationshipCreateOrConnectWithoutFriendInput>
+    upsert?: Enumerable<relationshipUpsertWithWhereUniqueWithoutFriendInput>
+    createMany?: relationshipCreateManyFriendInputEnvelope
+    set?: Enumerable<relationshipWhereUniqueInput>
+    disconnect?: Enumerable<relationshipWhereUniqueInput>
+    delete?: Enumerable<relationshipWhereUniqueInput>
+    connect?: Enumerable<relationshipWhereUniqueInput>
+    update?: Enumerable<relationshipUpdateWithWhereUniqueWithoutFriendInput>
+    updateMany?: Enumerable<relationshipUpdateManyWithWhereWithoutFriendInput>
+    deleteMany?: Enumerable<relationshipScalarWhereInput>
+  }
+
   export type MonitoringUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<Enumerable<MonitoringCreateWithoutUserInput>, Enumerable<MonitoringUncheckedCreateWithoutUserInput>>
     connectOrCreate?: Enumerable<MonitoringCreateOrConnectWithoutUserInput>
@@ -6859,10 +14213,184 @@ export namespace Prisma {
     deleteMany?: Enumerable<MonitoringScalarWhereInput>
   }
 
+  export type userThreadsUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutUserInput>, Enumerable<userThreadsUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<userThreadsUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: userThreadsCreateManyUserInputEnvelope
+    set?: Enumerable<userThreadsWhereUniqueInput>
+    disconnect?: Enumerable<userThreadsWhereUniqueInput>
+    delete?: Enumerable<userThreadsWhereUniqueInput>
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+    update?: Enumerable<userThreadsUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<userThreadsUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<userThreadsScalarWhereInput>
+  }
+
+  export type reactionUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutUserInput>, Enumerable<reactionUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<reactionUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: reactionCreateManyUserInputEnvelope
+    set?: Enumerable<reactionWhereUniqueInput>
+    disconnect?: Enumerable<reactionWhereUniqueInput>
+    delete?: Enumerable<reactionWhereUniqueInput>
+    connect?: Enumerable<reactionWhereUniqueInput>
+    update?: Enumerable<reactionUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<reactionUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<reactionScalarWhereInput>
+  }
+
+  export type CommentUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutUserInput>, Enumerable<CommentUncheckedCreateWithoutUserInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutUserInput>
+    upsert?: Enumerable<CommentUpsertWithWhereUniqueWithoutUserInput>
+    createMany?: CommentCreateManyUserInputEnvelope
+    set?: Enumerable<CommentWhereUniqueInput>
+    disconnect?: Enumerable<CommentWhereUniqueInput>
+    delete?: Enumerable<CommentWhereUniqueInput>
+    connect?: Enumerable<CommentWhereUniqueInput>
+    update?: Enumerable<CommentUpdateWithWhereUniqueWithoutUserInput>
+    updateMany?: Enumerable<CommentUpdateManyWithWhereWithoutUserInput>
+    deleteMany?: Enumerable<CommentScalarWhereInput>
+  }
+
+  export type UserCreateNestedOneWithoutUserInput = {
+    create?: XOR<UserCreateWithoutUserInput, UserUncheckedCreateWithoutUserInput>
+    connectOrCreate?: UserCreateOrConnectWithoutUserInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutRelationsInput = {
+    create?: XOR<UserCreateWithoutRelationsInput, UserUncheckedCreateWithoutRelationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutRelationsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneWithoutUserNestedInput = {
+    create?: XOR<UserCreateWithoutUserInput, UserUncheckedCreateWithoutUserInput>
+    connectOrCreate?: UserCreateOrConnectWithoutUserInput
+    upsert?: UserUpsertWithoutUserInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<UserUpdateWithoutUserInput, UserUncheckedUpdateWithoutUserInput>
+  }
+
+  export type UserUpdateOneWithoutRelationsNestedInput = {
+    create?: XOR<UserCreateWithoutRelationsInput, UserUncheckedCreateWithoutRelationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutRelationsInput
+    upsert?: UserUpsertWithoutRelationsInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<UserUpdateWithoutRelationsInput, UserUncheckedUpdateWithoutRelationsInput>
+  }
+
+  export type EnumRelationTypeFieldUpdateOperationsInput = {
+    set?: RelationType
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type UserCreateNestedOneWithoutUserThreadsInput = {
+    create?: XOR<UserCreateWithoutUserThreadsInput, UserUncheckedCreateWithoutUserThreadsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutUserThreadsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type ThreadCreateNestedOneWithoutUserInput = {
+    create?: XOR<ThreadCreateWithoutUserInput, ThreadUncheckedCreateWithoutUserInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutUserInput
+    connect?: ThreadWhereUniqueInput
+  }
+
+  export type UserUpdateOneWithoutUserThreadsNestedInput = {
+    create?: XOR<UserCreateWithoutUserThreadsInput, UserUncheckedCreateWithoutUserThreadsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutUserThreadsInput
+    upsert?: UserUpsertWithoutUserThreadsInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<UserUpdateWithoutUserThreadsInput, UserUncheckedUpdateWithoutUserThreadsInput>
+  }
+
+  export type ThreadUpdateOneWithoutUserNestedInput = {
+    create?: XOR<ThreadCreateWithoutUserInput, ThreadUncheckedCreateWithoutUserInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutUserInput
+    upsert?: ThreadUpsertWithoutUserInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: ThreadWhereUniqueInput
+    update?: XOR<ThreadUpdateWithoutUserInput, ThreadUncheckedUpdateWithoutUserInput>
+  }
+
   export type UserCreateNestedOneWithoutThreadCreatedInput = {
     create?: XOR<UserCreateWithoutThreadCreatedInput, UserUncheckedCreateWithoutThreadCreatedInput>
     connectOrCreate?: UserCreateOrConnectWithoutThreadCreatedInput
     connect?: UserWhereUniqueInput
+  }
+
+  export type userThreadsCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutThreadInput>, Enumerable<userThreadsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutThreadInput>
+    createMany?: userThreadsCreateManyThreadInputEnvelope
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+  }
+
+  export type threadAttachmentsCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<threadAttachmentsCreateWithoutThreadInput>, Enumerable<threadAttachmentsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<threadAttachmentsCreateOrConnectWithoutThreadInput>
+    createMany?: threadAttachmentsCreateManyThreadInputEnvelope
+    connect?: Enumerable<threadAttachmentsWhereUniqueInput>
+  }
+
+  export type reactionCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutThreadInput>, Enumerable<reactionUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutThreadInput>
+    createMany?: reactionCreateManyThreadInputEnvelope
+    connect?: Enumerable<reactionWhereUniqueInput>
+  }
+
+  export type CommentCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutThreadInput>, Enumerable<CommentUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutThreadInput>
+    createMany?: CommentCreateManyThreadInputEnvelope
+    connect?: Enumerable<CommentWhereUniqueInput>
+  }
+
+  export type userThreadsUncheckedCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutThreadInput>, Enumerable<userThreadsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutThreadInput>
+    createMany?: userThreadsCreateManyThreadInputEnvelope
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+  }
+
+  export type threadAttachmentsUncheckedCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<threadAttachmentsCreateWithoutThreadInput>, Enumerable<threadAttachmentsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<threadAttachmentsCreateOrConnectWithoutThreadInput>
+    createMany?: threadAttachmentsCreateManyThreadInputEnvelope
+    connect?: Enumerable<threadAttachmentsWhereUniqueInput>
+  }
+
+  export type reactionUncheckedCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutThreadInput>, Enumerable<reactionUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutThreadInput>
+    createMany?: reactionCreateManyThreadInputEnvelope
+    connect?: Enumerable<reactionWhereUniqueInput>
+  }
+
+  export type CommentUncheckedCreateNestedManyWithoutThreadInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutThreadInput>, Enumerable<CommentUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutThreadInput>
+    createMany?: CommentCreateManyThreadInputEnvelope
+    connect?: Enumerable<CommentWhereUniqueInput>
   }
 
   export type UserUpdateOneWithoutThreadCreatedNestedInput = {
@@ -6883,12 +14411,320 @@ export namespace Prisma {
     set?: DestinationThread
   }
 
-  export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
+  export type userThreadsUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutThreadInput>, Enumerable<userThreadsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<userThreadsUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: userThreadsCreateManyThreadInputEnvelope
+    set?: Enumerable<userThreadsWhereUniqueInput>
+    disconnect?: Enumerable<userThreadsWhereUniqueInput>
+    delete?: Enumerable<userThreadsWhereUniqueInput>
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+    update?: Enumerable<userThreadsUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<userThreadsUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<userThreadsScalarWhereInput>
+  }
+
+  export type threadAttachmentsUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<threadAttachmentsCreateWithoutThreadInput>, Enumerable<threadAttachmentsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<threadAttachmentsCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<threadAttachmentsUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: threadAttachmentsCreateManyThreadInputEnvelope
+    set?: Enumerable<threadAttachmentsWhereUniqueInput>
+    disconnect?: Enumerable<threadAttachmentsWhereUniqueInput>
+    delete?: Enumerable<threadAttachmentsWhereUniqueInput>
+    connect?: Enumerable<threadAttachmentsWhereUniqueInput>
+    update?: Enumerable<threadAttachmentsUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<threadAttachmentsUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<threadAttachmentsScalarWhereInput>
+  }
+
+  export type reactionUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutThreadInput>, Enumerable<reactionUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<reactionUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: reactionCreateManyThreadInputEnvelope
+    set?: Enumerable<reactionWhereUniqueInput>
+    disconnect?: Enumerable<reactionWhereUniqueInput>
+    delete?: Enumerable<reactionWhereUniqueInput>
+    connect?: Enumerable<reactionWhereUniqueInput>
+    update?: Enumerable<reactionUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<reactionUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<reactionScalarWhereInput>
+  }
+
+  export type CommentUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutThreadInput>, Enumerable<CommentUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<CommentUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: CommentCreateManyThreadInputEnvelope
+    set?: Enumerable<CommentWhereUniqueInput>
+    disconnect?: Enumerable<CommentWhereUniqueInput>
+    delete?: Enumerable<CommentWhereUniqueInput>
+    connect?: Enumerable<CommentWhereUniqueInput>
+    update?: Enumerable<CommentUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<CommentUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<CommentScalarWhereInput>
+  }
+
+  export type userThreadsUncheckedUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<userThreadsCreateWithoutThreadInput>, Enumerable<userThreadsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<userThreadsCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<userThreadsUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: userThreadsCreateManyThreadInputEnvelope
+    set?: Enumerable<userThreadsWhereUniqueInput>
+    disconnect?: Enumerable<userThreadsWhereUniqueInput>
+    delete?: Enumerable<userThreadsWhereUniqueInput>
+    connect?: Enumerable<userThreadsWhereUniqueInput>
+    update?: Enumerable<userThreadsUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<userThreadsUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<userThreadsScalarWhereInput>
+  }
+
+  export type threadAttachmentsUncheckedUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<threadAttachmentsCreateWithoutThreadInput>, Enumerable<threadAttachmentsUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<threadAttachmentsCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<threadAttachmentsUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: threadAttachmentsCreateManyThreadInputEnvelope
+    set?: Enumerable<threadAttachmentsWhereUniqueInput>
+    disconnect?: Enumerable<threadAttachmentsWhereUniqueInput>
+    delete?: Enumerable<threadAttachmentsWhereUniqueInput>
+    connect?: Enumerable<threadAttachmentsWhereUniqueInput>
+    update?: Enumerable<threadAttachmentsUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<threadAttachmentsUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<threadAttachmentsScalarWhereInput>
+  }
+
+  export type reactionUncheckedUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutThreadInput>, Enumerable<reactionUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<reactionUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: reactionCreateManyThreadInputEnvelope
+    set?: Enumerable<reactionWhereUniqueInput>
+    disconnect?: Enumerable<reactionWhereUniqueInput>
+    delete?: Enumerable<reactionWhereUniqueInput>
+    connect?: Enumerable<reactionWhereUniqueInput>
+    update?: Enumerable<reactionUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<reactionUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<reactionScalarWhereInput>
+  }
+
+  export type CommentUncheckedUpdateManyWithoutThreadNestedInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutThreadInput>, Enumerable<CommentUncheckedCreateWithoutThreadInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutThreadInput>
+    upsert?: Enumerable<CommentUpsertWithWhereUniqueWithoutThreadInput>
+    createMany?: CommentCreateManyThreadInputEnvelope
+    set?: Enumerable<CommentWhereUniqueInput>
+    disconnect?: Enumerable<CommentWhereUniqueInput>
+    delete?: Enumerable<CommentWhereUniqueInput>
+    connect?: Enumerable<CommentWhereUniqueInput>
+    update?: Enumerable<CommentUpdateWithWhereUniqueWithoutThreadInput>
+    updateMany?: Enumerable<CommentUpdateManyWithWhereWithoutThreadInput>
+    deleteMany?: Enumerable<CommentScalarWhereInput>
+  }
+
+  export type ThreadCreateNestedOneWithoutAttachmentInput = {
+    create?: XOR<ThreadCreateWithoutAttachmentInput, ThreadUncheckedCreateWithoutAttachmentInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutAttachmentInput
+    connect?: ThreadWhereUniqueInput
+  }
+
+  export type EnumAttachmentTypeFieldUpdateOperationsInput = {
+    set?: AttachmentType
+  }
+
+  export type ThreadUpdateOneWithoutAttachmentNestedInput = {
+    create?: XOR<ThreadCreateWithoutAttachmentInput, ThreadUncheckedCreateWithoutAttachmentInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutAttachmentInput
+    upsert?: ThreadUpsertWithoutAttachmentInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: ThreadWhereUniqueInput
+    update?: XOR<ThreadUpdateWithoutAttachmentInput, ThreadUncheckedUpdateWithoutAttachmentInput>
+  }
+
+  export type ThreadCreateNestedOneWithoutReactionInput = {
+    create?: XOR<ThreadCreateWithoutReactionInput, ThreadUncheckedCreateWithoutReactionInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutReactionInput
+    connect?: ThreadWhereUniqueInput
+  }
+
+  export type CommentCreateNestedOneWithoutReactionInput = {
+    create?: XOR<CommentCreateWithoutReactionInput, CommentUncheckedCreateWithoutReactionInput>
+    connectOrCreate?: CommentCreateOrConnectWithoutReactionInput
+    connect?: CommentWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutReactionInput = {
+    create?: XOR<UserCreateWithoutReactionInput, UserUncheckedCreateWithoutReactionInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReactionInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumReactTypeFieldUpdateOperationsInput = {
+    set?: ReactType
+  }
+
+  export type ThreadUpdateOneWithoutReactionNestedInput = {
+    create?: XOR<ThreadCreateWithoutReactionInput, ThreadUncheckedCreateWithoutReactionInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutReactionInput
+    upsert?: ThreadUpsertWithoutReactionInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: ThreadWhereUniqueInput
+    update?: XOR<ThreadUpdateWithoutReactionInput, ThreadUncheckedUpdateWithoutReactionInput>
+  }
+
+  export type CommentUpdateOneWithoutReactionNestedInput = {
+    create?: XOR<CommentCreateWithoutReactionInput, CommentUncheckedCreateWithoutReactionInput>
+    connectOrCreate?: CommentCreateOrConnectWithoutReactionInput
+    upsert?: CommentUpsertWithoutReactionInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: CommentWhereUniqueInput
+    update?: XOR<CommentUpdateWithoutReactionInput, CommentUncheckedUpdateWithoutReactionInput>
+  }
+
+  export type UserUpdateOneWithoutReactionNestedInput = {
+    create?: XOR<UserCreateWithoutReactionInput, UserUncheckedCreateWithoutReactionInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReactionInput
+    upsert?: UserUpsertWithoutReactionInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<UserUpdateWithoutReactionInput, UserUncheckedUpdateWithoutReactionInput>
+  }
+
+  export type ThreadCreateNestedOneWithoutCommentInput = {
+    create?: XOR<ThreadCreateWithoutCommentInput, ThreadUncheckedCreateWithoutCommentInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutCommentInput
+    connect?: ThreadWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutCommentInput = {
+    create?: XOR<UserCreateWithoutCommentInput, UserUncheckedCreateWithoutCommentInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommentInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type CommentCreateNestedOneWithoutChildrenInput = {
+    create?: XOR<CommentCreateWithoutChildrenInput, CommentUncheckedCreateWithoutChildrenInput>
+    connectOrCreate?: CommentCreateOrConnectWithoutChildrenInput
+    connect?: CommentWhereUniqueInput
+  }
+
+  export type CommentCreateNestedManyWithoutParentInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutParentInput>, Enumerable<CommentUncheckedCreateWithoutParentInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutParentInput>
+    createMany?: CommentCreateManyParentInputEnvelope
+    connect?: Enumerable<CommentWhereUniqueInput>
+  }
+
+  export type reactionCreateNestedManyWithoutCommentInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutCommentInput>, Enumerable<reactionUncheckedCreateWithoutCommentInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutCommentInput>
+    createMany?: reactionCreateManyCommentInputEnvelope
+    connect?: Enumerable<reactionWhereUniqueInput>
+  }
+
+  export type CommentUncheckedCreateNestedManyWithoutParentInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutParentInput>, Enumerable<CommentUncheckedCreateWithoutParentInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutParentInput>
+    createMany?: CommentCreateManyParentInputEnvelope
+    connect?: Enumerable<CommentWhereUniqueInput>
+  }
+
+  export type reactionUncheckedCreateNestedManyWithoutCommentInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutCommentInput>, Enumerable<reactionUncheckedCreateWithoutCommentInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutCommentInput>
+    createMany?: reactionCreateManyCommentInputEnvelope
+    connect?: Enumerable<reactionWhereUniqueInput>
+  }
+
+  export type ThreadUpdateOneWithoutCommentNestedInput = {
+    create?: XOR<ThreadCreateWithoutCommentInput, ThreadUncheckedCreateWithoutCommentInput>
+    connectOrCreate?: ThreadCreateOrConnectWithoutCommentInput
+    upsert?: ThreadUpsertWithoutCommentInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: ThreadWhereUniqueInput
+    update?: XOR<ThreadUpdateWithoutCommentInput, ThreadUncheckedUpdateWithoutCommentInput>
+  }
+
+  export type UserUpdateOneWithoutCommentNestedInput = {
+    create?: XOR<UserCreateWithoutCommentInput, UserUncheckedCreateWithoutCommentInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCommentInput
+    upsert?: UserUpsertWithoutCommentInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<UserUpdateWithoutCommentInput, UserUncheckedUpdateWithoutCommentInput>
+  }
+
+  export type CommentUpdateOneWithoutChildrenNestedInput = {
+    create?: XOR<CommentCreateWithoutChildrenInput, CommentUncheckedCreateWithoutChildrenInput>
+    connectOrCreate?: CommentCreateOrConnectWithoutChildrenInput
+    upsert?: CommentUpsertWithoutChildrenInput
+    disconnect?: boolean
+    delete?: boolean
+    connect?: CommentWhereUniqueInput
+    update?: XOR<CommentUpdateWithoutChildrenInput, CommentUncheckedUpdateWithoutChildrenInput>
+  }
+
+  export type CommentUpdateManyWithoutParentNestedInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutParentInput>, Enumerable<CommentUncheckedCreateWithoutParentInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutParentInput>
+    upsert?: Enumerable<CommentUpsertWithWhereUniqueWithoutParentInput>
+    createMany?: CommentCreateManyParentInputEnvelope
+    set?: Enumerable<CommentWhereUniqueInput>
+    disconnect?: Enumerable<CommentWhereUniqueInput>
+    delete?: Enumerable<CommentWhereUniqueInput>
+    connect?: Enumerable<CommentWhereUniqueInput>
+    update?: Enumerable<CommentUpdateWithWhereUniqueWithoutParentInput>
+    updateMany?: Enumerable<CommentUpdateManyWithWhereWithoutParentInput>
+    deleteMany?: Enumerable<CommentScalarWhereInput>
+  }
+
+  export type reactionUpdateManyWithoutCommentNestedInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutCommentInput>, Enumerable<reactionUncheckedCreateWithoutCommentInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutCommentInput>
+    upsert?: Enumerable<reactionUpsertWithWhereUniqueWithoutCommentInput>
+    createMany?: reactionCreateManyCommentInputEnvelope
+    set?: Enumerable<reactionWhereUniqueInput>
+    disconnect?: Enumerable<reactionWhereUniqueInput>
+    delete?: Enumerable<reactionWhereUniqueInput>
+    connect?: Enumerable<reactionWhereUniqueInput>
+    update?: Enumerable<reactionUpdateWithWhereUniqueWithoutCommentInput>
+    updateMany?: Enumerable<reactionUpdateManyWithWhereWithoutCommentInput>
+    deleteMany?: Enumerable<reactionScalarWhereInput>
+  }
+
+  export type CommentUncheckedUpdateManyWithoutParentNestedInput = {
+    create?: XOR<Enumerable<CommentCreateWithoutParentInput>, Enumerable<CommentUncheckedCreateWithoutParentInput>>
+    connectOrCreate?: Enumerable<CommentCreateOrConnectWithoutParentInput>
+    upsert?: Enumerable<CommentUpsertWithWhereUniqueWithoutParentInput>
+    createMany?: CommentCreateManyParentInputEnvelope
+    set?: Enumerable<CommentWhereUniqueInput>
+    disconnect?: Enumerable<CommentWhereUniqueInput>
+    delete?: Enumerable<CommentWhereUniqueInput>
+    connect?: Enumerable<CommentWhereUniqueInput>
+    update?: Enumerable<CommentUpdateWithWhereUniqueWithoutParentInput>
+    updateMany?: Enumerable<CommentUpdateManyWithWhereWithoutParentInput>
+    deleteMany?: Enumerable<CommentScalarWhereInput>
+  }
+
+  export type reactionUncheckedUpdateManyWithoutCommentNestedInput = {
+    create?: XOR<Enumerable<reactionCreateWithoutCommentInput>, Enumerable<reactionUncheckedCreateWithoutCommentInput>>
+    connectOrCreate?: Enumerable<reactionCreateOrConnectWithoutCommentInput>
+    upsert?: Enumerable<reactionUpsertWithWhereUniqueWithoutCommentInput>
+    createMany?: reactionCreateManyCommentInputEnvelope
+    set?: Enumerable<reactionWhereUniqueInput>
+    disconnect?: Enumerable<reactionWhereUniqueInput>
+    delete?: Enumerable<reactionWhereUniqueInput>
+    connect?: Enumerable<reactionWhereUniqueInput>
+    update?: Enumerable<reactionUpdateWithWhereUniqueWithoutCommentInput>
+    updateMany?: Enumerable<reactionUpdateManyWithWhereWithoutCommentInput>
+    deleteMany?: Enumerable<reactionScalarWhereInput>
   }
 
   export type UserCreateNestedOneWithoutSessionInput = {
@@ -7136,18 +14972,11 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter
   }
 
-  export type NestedEnumThreadPrivacyFilter = {
-    equals?: ThreadPrivacy
-    in?: Enumerable<ThreadPrivacy>
-    notIn?: Enumerable<ThreadPrivacy>
-    not?: NestedEnumThreadPrivacyFilter | ThreadPrivacy
-  }
-
-  export type NestedEnumDestinationThreadFilter = {
-    equals?: DestinationThread
-    in?: Enumerable<DestinationThread>
-    notIn?: Enumerable<DestinationThread>
-    not?: NestedEnumDestinationThreadFilter | DestinationThread
+  export type NestedEnumRelationTypeFilter = {
+    equals?: RelationType
+    in?: Enumerable<RelationType>
+    notIn?: Enumerable<RelationType>
+    not?: NestedEnumRelationTypeFilter | RelationType
   }
 
   export type NestedIntNullableWithAggregatesFilter = {
@@ -7177,6 +15006,30 @@ export namespace Prisma {
     not?: NestedFloatNullableFilter | number | null
   }
 
+  export type NestedEnumRelationTypeWithAggregatesFilter = {
+    equals?: RelationType
+    in?: Enumerable<RelationType>
+    notIn?: Enumerable<RelationType>
+    not?: NestedEnumRelationTypeWithAggregatesFilter | RelationType
+    _count?: NestedIntFilter
+    _min?: NestedEnumRelationTypeFilter
+    _max?: NestedEnumRelationTypeFilter
+  }
+
+  export type NestedEnumThreadPrivacyFilter = {
+    equals?: ThreadPrivacy
+    in?: Enumerable<ThreadPrivacy>
+    notIn?: Enumerable<ThreadPrivacy>
+    not?: NestedEnumThreadPrivacyFilter | ThreadPrivacy
+  }
+
+  export type NestedEnumDestinationThreadFilter = {
+    equals?: DestinationThread
+    in?: Enumerable<DestinationThread>
+    notIn?: Enumerable<DestinationThread>
+    not?: NestedEnumDestinationThreadFilter | DestinationThread
+  }
+
   export type NestedEnumThreadPrivacyWithAggregatesFilter = {
     equals?: ThreadPrivacy
     in?: Enumerable<ThreadPrivacy>
@@ -7195,6 +15048,40 @@ export namespace Prisma {
     _count?: NestedIntFilter
     _min?: NestedEnumDestinationThreadFilter
     _max?: NestedEnumDestinationThreadFilter
+  }
+
+  export type NestedEnumAttachmentTypeFilter = {
+    equals?: AttachmentType
+    in?: Enumerable<AttachmentType>
+    notIn?: Enumerable<AttachmentType>
+    not?: NestedEnumAttachmentTypeFilter | AttachmentType
+  }
+
+  export type NestedEnumAttachmentTypeWithAggregatesFilter = {
+    equals?: AttachmentType
+    in?: Enumerable<AttachmentType>
+    notIn?: Enumerable<AttachmentType>
+    not?: NestedEnumAttachmentTypeWithAggregatesFilter | AttachmentType
+    _count?: NestedIntFilter
+    _min?: NestedEnumAttachmentTypeFilter
+    _max?: NestedEnumAttachmentTypeFilter
+  }
+
+  export type NestedEnumReactTypeFilter = {
+    equals?: ReactType
+    in?: Enumerable<ReactType>
+    notIn?: Enumerable<ReactType>
+    not?: NestedEnumReactTypeFilter | ReactType
+  }
+
+  export type NestedEnumReactTypeWithAggregatesFilter = {
+    equals?: ReactType
+    in?: Enumerable<ReactType>
+    notIn?: Enumerable<ReactType>
+    not?: NestedEnumReactTypeWithAggregatesFilter | ReactType
+    _count?: NestedIntFilter
+    _min?: NestedEnumReactTypeFilter
+    _max?: NestedEnumReactTypeFilter
   }
 
   export type NestedEnumLogTypeFilter = {
@@ -7216,23 +15103,35 @@ export namespace Prisma {
 
   export type ThreadCreateWithoutAuthorInput = {
     content: string
+    totalReact?: number | null
+    totalComment?: number | null
     privacy?: ThreadPrivacy
     destination?: DestinationThread
     isActive?: boolean
     isDelete?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    user?: userThreadsCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsCreateNestedManyWithoutThreadInput
+    reaction?: reactionCreateNestedManyWithoutThreadInput
+    Comment?: CommentCreateNestedManyWithoutThreadInput
   }
 
   export type ThreadUncheckedCreateWithoutAuthorInput = {
     id?: number
     content: string
+    totalReact?: number | null
+    totalComment?: number | null
     privacy?: ThreadPrivacy
     destination?: DestinationThread
     isActive?: boolean
     isDelete?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    user?: userThreadsUncheckedCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsUncheckedCreateNestedManyWithoutThreadInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutThreadInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutThreadInput
   }
 
   export type ThreadCreateOrConnectWithoutAuthorInput = {
@@ -7282,6 +15181,68 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type relationshipCreateWithoutUserInput = {
+    content: string
+    friend?: UserCreateNestedOneWithoutRelationsInput
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipUncheckedCreateWithoutUserInput = {
+    id?: number
+    content: string
+    friendId?: number | null
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipCreateOrConnectWithoutUserInput = {
+    where: relationshipWhereUniqueInput
+    create: XOR<relationshipCreateWithoutUserInput, relationshipUncheckedCreateWithoutUserInput>
+  }
+
+  export type relationshipCreateManyUserInputEnvelope = {
+    data: Enumerable<relationshipCreateManyUserInput>
+    skipDuplicates?: boolean
+  }
+
+  export type relationshipCreateWithoutFriendInput = {
+    content: string
+    user?: UserCreateNestedOneWithoutUserInput
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipUncheckedCreateWithoutFriendInput = {
+    id?: number
+    content: string
+    userId?: number | null
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipCreateOrConnectWithoutFriendInput = {
+    where: relationshipWhereUniqueInput
+    create: XOR<relationshipCreateWithoutFriendInput, relationshipUncheckedCreateWithoutFriendInput>
+  }
+
+  export type relationshipCreateManyFriendInputEnvelope = {
+    data: Enumerable<relationshipCreateManyFriendInput>
+    skipDuplicates?: boolean
+  }
+
   export type MonitoringCreateWithoutUserInput = {
     type: LogType
     detail?: NullableJsonNullValueInput | InputJsonValue
@@ -7311,6 +15272,99 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type userThreadsCreateWithoutUserInput = {
+    thread?: ThreadCreateNestedOneWithoutUserInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsUncheckedCreateWithoutUserInput = {
+    id?: number
+    threadId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsCreateOrConnectWithoutUserInput = {
+    where: userThreadsWhereUniqueInput
+    create: XOR<userThreadsCreateWithoutUserInput, userThreadsUncheckedCreateWithoutUserInput>
+  }
+
+  export type userThreadsCreateManyUserInputEnvelope = {
+    data: Enumerable<userThreadsCreateManyUserInput>
+    skipDuplicates?: boolean
+  }
+
+  export type reactionCreateWithoutUserInput = {
+    react: ReactType
+    thread?: ThreadCreateNestedOneWithoutReactionInput
+    comment?: CommentCreateNestedOneWithoutReactionInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionUncheckedCreateWithoutUserInput = {
+    id?: number
+    react: ReactType
+    threadId?: number | null
+    commentId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionCreateOrConnectWithoutUserInput = {
+    where: reactionWhereUniqueInput
+    create: XOR<reactionCreateWithoutUserInput, reactionUncheckedCreateWithoutUserInput>
+  }
+
+  export type reactionCreateManyUserInputEnvelope = {
+    data: Enumerable<reactionCreateManyUserInput>
+    skipDuplicates?: boolean
+  }
+
+  export type CommentCreateWithoutUserInput = {
+    content: string
+    thread?: ThreadCreateNestedOneWithoutCommentInput
+    parent?: CommentCreateNestedOneWithoutChildrenInput
+    children?: CommentCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUncheckedCreateWithoutUserInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    parentId?: number | null
+    children?: CommentUncheckedCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionUncheckedCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentCreateOrConnectWithoutUserInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput>
+  }
+
+  export type CommentCreateManyUserInputEnvelope = {
+    data: Enumerable<CommentCreateManyUserInput>
+    skipDuplicates?: boolean
+  }
+
   export type ThreadUpsertWithWhereUniqueWithoutAuthorInput = {
     where: ThreadWhereUniqueInput
     update: XOR<ThreadUpdateWithoutAuthorInput, ThreadUncheckedUpdateWithoutAuthorInput>
@@ -7333,6 +15387,8 @@ export namespace Prisma {
     NOT?: Enumerable<ThreadScalarWhereInput>
     id?: IntFilter | number
     content?: StringFilter | string
+    totalReact?: IntNullableFilter | number | null
+    totalComment?: IntNullableFilter | number | null
     authorId?: IntNullableFilter | number | null
     privacy?: EnumThreadPrivacyFilter | ThreadPrivacy
     destination?: EnumDestinationThreadFilter | DestinationThread
@@ -7376,6 +15432,53 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter | Date | string
   }
 
+  export type relationshipUpsertWithWhereUniqueWithoutUserInput = {
+    where: relationshipWhereUniqueInput
+    update: XOR<relationshipUpdateWithoutUserInput, relationshipUncheckedUpdateWithoutUserInput>
+    create: XOR<relationshipCreateWithoutUserInput, relationshipUncheckedCreateWithoutUserInput>
+  }
+
+  export type relationshipUpdateWithWhereUniqueWithoutUserInput = {
+    where: relationshipWhereUniqueInput
+    data: XOR<relationshipUpdateWithoutUserInput, relationshipUncheckedUpdateWithoutUserInput>
+  }
+
+  export type relationshipUpdateManyWithWhereWithoutUserInput = {
+    where: relationshipScalarWhereInput
+    data: XOR<relationshipUpdateManyMutationInput, relationshipUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type relationshipScalarWhereInput = {
+    AND?: Enumerable<relationshipScalarWhereInput>
+    OR?: Enumerable<relationshipScalarWhereInput>
+    NOT?: Enumerable<relationshipScalarWhereInput>
+    id?: IntFilter | number
+    content?: StringFilter | string
+    userId?: IntNullableFilter | number | null
+    friendId?: IntNullableFilter | number | null
+    relationType?: EnumRelationTypeFilter | RelationType
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type relationshipUpsertWithWhereUniqueWithoutFriendInput = {
+    where: relationshipWhereUniqueInput
+    update: XOR<relationshipUpdateWithoutFriendInput, relationshipUncheckedUpdateWithoutFriendInput>
+    create: XOR<relationshipCreateWithoutFriendInput, relationshipUncheckedCreateWithoutFriendInput>
+  }
+
+  export type relationshipUpdateWithWhereUniqueWithoutFriendInput = {
+    where: relationshipWhereUniqueInput
+    data: XOR<relationshipUpdateWithoutFriendInput, relationshipUncheckedUpdateWithoutFriendInput>
+  }
+
+  export type relationshipUpdateManyWithWhereWithoutFriendInput = {
+    where: relationshipScalarWhereInput
+    data: XOR<relationshipUpdateManyMutationInput, relationshipUncheckedUpdateManyWithoutRelationsInput>
+  }
+
   export type MonitoringUpsertWithWhereUniqueWithoutUserInput = {
     where: MonitoringWhereUniqueInput
     update: XOR<MonitoringUpdateWithoutUserInput, MonitoringUncheckedUpdateWithoutUserInput>
@@ -7406,6 +15509,509 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter | Date | string
   }
 
+  export type userThreadsUpsertWithWhereUniqueWithoutUserInput = {
+    where: userThreadsWhereUniqueInput
+    update: XOR<userThreadsUpdateWithoutUserInput, userThreadsUncheckedUpdateWithoutUserInput>
+    create: XOR<userThreadsCreateWithoutUserInput, userThreadsUncheckedCreateWithoutUserInput>
+  }
+
+  export type userThreadsUpdateWithWhereUniqueWithoutUserInput = {
+    where: userThreadsWhereUniqueInput
+    data: XOR<userThreadsUpdateWithoutUserInput, userThreadsUncheckedUpdateWithoutUserInput>
+  }
+
+  export type userThreadsUpdateManyWithWhereWithoutUserInput = {
+    where: userThreadsScalarWhereInput
+    data: XOR<userThreadsUpdateManyMutationInput, userThreadsUncheckedUpdateManyWithoutUserThreadsInput>
+  }
+
+  export type userThreadsScalarWhereInput = {
+    AND?: Enumerable<userThreadsScalarWhereInput>
+    OR?: Enumerable<userThreadsScalarWhereInput>
+    NOT?: Enumerable<userThreadsScalarWhereInput>
+    id?: IntFilter | number
+    userId?: IntNullableFilter | number | null
+    threadId?: IntNullableFilter | number | null
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type reactionUpsertWithWhereUniqueWithoutUserInput = {
+    where: reactionWhereUniqueInput
+    update: XOR<reactionUpdateWithoutUserInput, reactionUncheckedUpdateWithoutUserInput>
+    create: XOR<reactionCreateWithoutUserInput, reactionUncheckedCreateWithoutUserInput>
+  }
+
+  export type reactionUpdateWithWhereUniqueWithoutUserInput = {
+    where: reactionWhereUniqueInput
+    data: XOR<reactionUpdateWithoutUserInput, reactionUncheckedUpdateWithoutUserInput>
+  }
+
+  export type reactionUpdateManyWithWhereWithoutUserInput = {
+    where: reactionScalarWhereInput
+    data: XOR<reactionUpdateManyMutationInput, reactionUncheckedUpdateManyWithoutReactionInput>
+  }
+
+  export type reactionScalarWhereInput = {
+    AND?: Enumerable<reactionScalarWhereInput>
+    OR?: Enumerable<reactionScalarWhereInput>
+    NOT?: Enumerable<reactionScalarWhereInput>
+    id?: IntFilter | number
+    react?: EnumReactTypeFilter | ReactType
+    threadId?: IntNullableFilter | number | null
+    commentId?: IntNullableFilter | number | null
+    userId?: IntNullableFilter | number | null
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type CommentUpsertWithWhereUniqueWithoutUserInput = {
+    where: CommentWhereUniqueInput
+    update: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
+    create: XOR<CommentCreateWithoutUserInput, CommentUncheckedCreateWithoutUserInput>
+  }
+
+  export type CommentUpdateWithWhereUniqueWithoutUserInput = {
+    where: CommentWhereUniqueInput
+    data: XOR<CommentUpdateWithoutUserInput, CommentUncheckedUpdateWithoutUserInput>
+  }
+
+  export type CommentUpdateManyWithWhereWithoutUserInput = {
+    where: CommentScalarWhereInput
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutCommentInput>
+  }
+
+  export type CommentScalarWhereInput = {
+    AND?: Enumerable<CommentScalarWhereInput>
+    OR?: Enumerable<CommentScalarWhereInput>
+    NOT?: Enumerable<CommentScalarWhereInput>
+    id?: IntFilter | number
+    content?: StringFilter | string
+    threadId?: IntNullableFilter | number | null
+    userId?: IntNullableFilter | number | null
+    parentId?: IntNullableFilter | number | null
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type UserCreateWithoutUserInput = {
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutUserInput = {
+    id?: number
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutUserInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutUserInput, UserUncheckedCreateWithoutUserInput>
+  }
+
+  export type UserCreateWithoutRelationsInput = {
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionCreateNestedManyWithoutUserInput
+    user?: relationshipCreateNestedManyWithoutUserInput
+    monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutRelationsInput = {
+    id?: number
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutRelationsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutRelationsInput, UserUncheckedCreateWithoutRelationsInput>
+  }
+
+  export type UserUpsertWithoutUserInput = {
+    update: XOR<UserUpdateWithoutUserInput, UserUncheckedUpdateWithoutUserInput>
+    create: XOR<UserCreateWithoutUserInput, UserUncheckedCreateWithoutUserInput>
+  }
+
+  export type UserUpdateWithoutUserInput = {
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUpsertWithoutRelationsInput = {
+    update: XOR<UserUpdateWithoutRelationsInput, UserUncheckedUpdateWithoutRelationsInput>
+    create: XOR<UserCreateWithoutRelationsInput, UserUncheckedCreateWithoutRelationsInput>
+  }
+
+  export type UserUpdateWithoutRelationsInput = {
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUpdateManyWithoutUserNestedInput
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutRelationsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutUserThreadsInput = {
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionCreateNestedManyWithoutUserInput
+    user?: relationshipCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutUserThreadsInput = {
+    id?: number
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutUserThreadsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutUserThreadsInput, UserUncheckedCreateWithoutUserThreadsInput>
+  }
+
+  export type ThreadCreateWithoutUserInput = {
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    author?: UserCreateNestedOneWithoutThreadCreatedInput
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    attachment?: threadAttachmentsCreateNestedManyWithoutThreadInput
+    reaction?: reactionCreateNestedManyWithoutThreadInput
+    Comment?: CommentCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadUncheckedCreateWithoutUserInput = {
+    id?: number
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    authorId?: number | null
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    attachment?: threadAttachmentsUncheckedCreateNestedManyWithoutThreadInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutThreadInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadCreateOrConnectWithoutUserInput = {
+    where: ThreadWhereUniqueInput
+    create: XOR<ThreadCreateWithoutUserInput, ThreadUncheckedCreateWithoutUserInput>
+  }
+
+  export type UserUpsertWithoutUserThreadsInput = {
+    update: XOR<UserUpdateWithoutUserThreadsInput, UserUncheckedUpdateWithoutUserThreadsInput>
+    create: XOR<UserCreateWithoutUserThreadsInput, UserUncheckedCreateWithoutUserThreadsInput>
+  }
+
+  export type UserUpdateWithoutUserThreadsInput = {
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUpdateManyWithoutUserNestedInput
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutUserThreadsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type ThreadUpsertWithoutUserInput = {
+    update: XOR<ThreadUpdateWithoutUserInput, ThreadUncheckedUpdateWithoutUserInput>
+    create: XOR<ThreadCreateWithoutUserInput, ThreadUncheckedCreateWithoutUserInput>
+  }
+
+  export type ThreadUpdateWithoutUserInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    author?: UserUpdateOneWithoutThreadCreatedNestedInput
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachment?: threadAttachmentsUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUpdateManyWithoutThreadNestedInput
+  }
+
+  export type ThreadUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    authorId?: NullableIntFieldUpdateOperationsInput | number | null
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachment?: threadAttachmentsUncheckedUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutThreadNestedInput
+  }
+
   export type UserCreateWithoutThreadCreatedInput = {
     userName?: string | null
     email: string
@@ -7415,6 +16021,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     isActive?: boolean
@@ -7422,7 +16029,12 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     session?: SessionCreateNestedManyWithoutUserInput
+    user?: relationshipCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
     monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutThreadCreatedInput = {
@@ -7435,6 +16047,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     isActive?: boolean
@@ -7442,12 +16055,139 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
     monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutThreadCreatedInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutThreadCreatedInput, UserUncheckedCreateWithoutThreadCreatedInput>
+  }
+
+  export type userThreadsCreateWithoutThreadInput = {
+    user?: UserCreateNestedOneWithoutUserThreadsInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsUncheckedCreateWithoutThreadInput = {
+    id?: number
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsCreateOrConnectWithoutThreadInput = {
+    where: userThreadsWhereUniqueInput
+    create: XOR<userThreadsCreateWithoutThreadInput, userThreadsUncheckedCreateWithoutThreadInput>
+  }
+
+  export type userThreadsCreateManyThreadInputEnvelope = {
+    data: Enumerable<userThreadsCreateManyThreadInput>
+    skipDuplicates?: boolean
+  }
+
+  export type threadAttachmentsCreateWithoutThreadInput = {
+    link: string
+    type: AttachmentType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type threadAttachmentsUncheckedCreateWithoutThreadInput = {
+    id?: number
+    link: string
+    type: AttachmentType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type threadAttachmentsCreateOrConnectWithoutThreadInput = {
+    where: threadAttachmentsWhereUniqueInput
+    create: XOR<threadAttachmentsCreateWithoutThreadInput, threadAttachmentsUncheckedCreateWithoutThreadInput>
+  }
+
+  export type threadAttachmentsCreateManyThreadInputEnvelope = {
+    data: Enumerable<threadAttachmentsCreateManyThreadInput>
+    skipDuplicates?: boolean
+  }
+
+  export type reactionCreateWithoutThreadInput = {
+    react: ReactType
+    comment?: CommentCreateNestedOneWithoutReactionInput
+    user?: UserCreateNestedOneWithoutReactionInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionUncheckedCreateWithoutThreadInput = {
+    id?: number
+    react: ReactType
+    commentId?: number | null
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionCreateOrConnectWithoutThreadInput = {
+    where: reactionWhereUniqueInput
+    create: XOR<reactionCreateWithoutThreadInput, reactionUncheckedCreateWithoutThreadInput>
+  }
+
+  export type reactionCreateManyThreadInputEnvelope = {
+    data: Enumerable<reactionCreateManyThreadInput>
+    skipDuplicates?: boolean
+  }
+
+  export type CommentCreateWithoutThreadInput = {
+    content: string
+    user?: UserCreateNestedOneWithoutCommentInput
+    parent?: CommentCreateNestedOneWithoutChildrenInput
+    children?: CommentCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUncheckedCreateWithoutThreadInput = {
+    id?: number
+    content: string
+    userId?: number | null
+    parentId?: number | null
+    children?: CommentUncheckedCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionUncheckedCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentCreateOrConnectWithoutThreadInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutThreadInput, CommentUncheckedCreateWithoutThreadInput>
+  }
+
+  export type CommentCreateManyThreadInputEnvelope = {
+    data: Enumerable<CommentCreateManyThreadInput>
+    skipDuplicates?: boolean
   }
 
   export type UserUpsertWithoutThreadCreatedInput = {
@@ -7464,6 +16204,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
@@ -7471,7 +16212,12 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     session?: SessionUpdateManyWithoutUserNestedInput
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
     monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutThreadCreatedInput = {
@@ -7484,6 +16230,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
@@ -7491,7 +16238,760 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
     monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type userThreadsUpsertWithWhereUniqueWithoutThreadInput = {
+    where: userThreadsWhereUniqueInput
+    update: XOR<userThreadsUpdateWithoutThreadInput, userThreadsUncheckedUpdateWithoutThreadInput>
+    create: XOR<userThreadsCreateWithoutThreadInput, userThreadsUncheckedCreateWithoutThreadInput>
+  }
+
+  export type userThreadsUpdateWithWhereUniqueWithoutThreadInput = {
+    where: userThreadsWhereUniqueInput
+    data: XOR<userThreadsUpdateWithoutThreadInput, userThreadsUncheckedUpdateWithoutThreadInput>
+  }
+
+  export type userThreadsUpdateManyWithWhereWithoutThreadInput = {
+    where: userThreadsScalarWhereInput
+    data: XOR<userThreadsUpdateManyMutationInput, userThreadsUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type threadAttachmentsUpsertWithWhereUniqueWithoutThreadInput = {
+    where: threadAttachmentsWhereUniqueInput
+    update: XOR<threadAttachmentsUpdateWithoutThreadInput, threadAttachmentsUncheckedUpdateWithoutThreadInput>
+    create: XOR<threadAttachmentsCreateWithoutThreadInput, threadAttachmentsUncheckedCreateWithoutThreadInput>
+  }
+
+  export type threadAttachmentsUpdateWithWhereUniqueWithoutThreadInput = {
+    where: threadAttachmentsWhereUniqueInput
+    data: XOR<threadAttachmentsUpdateWithoutThreadInput, threadAttachmentsUncheckedUpdateWithoutThreadInput>
+  }
+
+  export type threadAttachmentsUpdateManyWithWhereWithoutThreadInput = {
+    where: threadAttachmentsScalarWhereInput
+    data: XOR<threadAttachmentsUpdateManyMutationInput, threadAttachmentsUncheckedUpdateManyWithoutAttachmentInput>
+  }
+
+  export type threadAttachmentsScalarWhereInput = {
+    AND?: Enumerable<threadAttachmentsScalarWhereInput>
+    OR?: Enumerable<threadAttachmentsScalarWhereInput>
+    NOT?: Enumerable<threadAttachmentsScalarWhereInput>
+    id?: IntFilter | number
+    link?: StringFilter | string
+    type?: EnumAttachmentTypeFilter | AttachmentType
+    threadId?: IntNullableFilter | number | null
+    isActive?: BoolFilter | boolean
+    isDelete?: BoolFilter | boolean
+    createdAt?: DateTimeFilter | Date | string
+    updatedAt?: DateTimeFilter | Date | string
+  }
+
+  export type reactionUpsertWithWhereUniqueWithoutThreadInput = {
+    where: reactionWhereUniqueInput
+    update: XOR<reactionUpdateWithoutThreadInput, reactionUncheckedUpdateWithoutThreadInput>
+    create: XOR<reactionCreateWithoutThreadInput, reactionUncheckedCreateWithoutThreadInput>
+  }
+
+  export type reactionUpdateWithWhereUniqueWithoutThreadInput = {
+    where: reactionWhereUniqueInput
+    data: XOR<reactionUpdateWithoutThreadInput, reactionUncheckedUpdateWithoutThreadInput>
+  }
+
+  export type reactionUpdateManyWithWhereWithoutThreadInput = {
+    where: reactionScalarWhereInput
+    data: XOR<reactionUpdateManyMutationInput, reactionUncheckedUpdateManyWithoutReactionInput>
+  }
+
+  export type CommentUpsertWithWhereUniqueWithoutThreadInput = {
+    where: CommentWhereUniqueInput
+    update: XOR<CommentUpdateWithoutThreadInput, CommentUncheckedUpdateWithoutThreadInput>
+    create: XOR<CommentCreateWithoutThreadInput, CommentUncheckedCreateWithoutThreadInput>
+  }
+
+  export type CommentUpdateWithWhereUniqueWithoutThreadInput = {
+    where: CommentWhereUniqueInput
+    data: XOR<CommentUpdateWithoutThreadInput, CommentUncheckedUpdateWithoutThreadInput>
+  }
+
+  export type CommentUpdateManyWithWhereWithoutThreadInput = {
+    where: CommentScalarWhereInput
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutCommentInput>
+  }
+
+  export type ThreadCreateWithoutAttachmentInput = {
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    author?: UserCreateNestedOneWithoutThreadCreatedInput
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user?: userThreadsCreateNestedManyWithoutThreadInput
+    reaction?: reactionCreateNestedManyWithoutThreadInput
+    Comment?: CommentCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadUncheckedCreateWithoutAttachmentInput = {
+    id?: number
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    authorId?: number | null
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user?: userThreadsUncheckedCreateNestedManyWithoutThreadInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutThreadInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadCreateOrConnectWithoutAttachmentInput = {
+    where: ThreadWhereUniqueInput
+    create: XOR<ThreadCreateWithoutAttachmentInput, ThreadUncheckedCreateWithoutAttachmentInput>
+  }
+
+  export type ThreadUpsertWithoutAttachmentInput = {
+    update: XOR<ThreadUpdateWithoutAttachmentInput, ThreadUncheckedUpdateWithoutAttachmentInput>
+    create: XOR<ThreadCreateWithoutAttachmentInput, ThreadUncheckedCreateWithoutAttachmentInput>
+  }
+
+  export type ThreadUpdateWithoutAttachmentInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    author?: UserUpdateOneWithoutThreadCreatedNestedInput
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUpdateManyWithoutThreadNestedInput
+  }
+
+  export type ThreadUncheckedUpdateWithoutAttachmentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    authorId?: NullableIntFieldUpdateOperationsInput | number | null
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUncheckedUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutThreadNestedInput
+  }
+
+  export type ThreadCreateWithoutReactionInput = {
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    author?: UserCreateNestedOneWithoutThreadCreatedInput
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user?: userThreadsCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsCreateNestedManyWithoutThreadInput
+    Comment?: CommentCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadUncheckedCreateWithoutReactionInput = {
+    id?: number
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    authorId?: number | null
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user?: userThreadsUncheckedCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsUncheckedCreateNestedManyWithoutThreadInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadCreateOrConnectWithoutReactionInput = {
+    where: ThreadWhereUniqueInput
+    create: XOR<ThreadCreateWithoutReactionInput, ThreadUncheckedCreateWithoutReactionInput>
+  }
+
+  export type CommentCreateWithoutReactionInput = {
+    content: string
+    thread?: ThreadCreateNestedOneWithoutCommentInput
+    user?: UserCreateNestedOneWithoutCommentInput
+    parent?: CommentCreateNestedOneWithoutChildrenInput
+    children?: CommentCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommentUncheckedCreateWithoutReactionInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    userId?: number | null
+    parentId?: number | null
+    children?: CommentUncheckedCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommentCreateOrConnectWithoutReactionInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutReactionInput, CommentUncheckedCreateWithoutReactionInput>
+  }
+
+  export type UserCreateWithoutReactionInput = {
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionCreateNestedManyWithoutUserInput
+    user?: relationshipCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutReactionInput = {
+    id?: number
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutReactionInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutReactionInput, UserUncheckedCreateWithoutReactionInput>
+  }
+
+  export type ThreadUpsertWithoutReactionInput = {
+    update: XOR<ThreadUpdateWithoutReactionInput, ThreadUncheckedUpdateWithoutReactionInput>
+    create: XOR<ThreadCreateWithoutReactionInput, ThreadUncheckedCreateWithoutReactionInput>
+  }
+
+  export type ThreadUpdateWithoutReactionInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    author?: UserUpdateOneWithoutThreadCreatedNestedInput
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUpdateManyWithoutThreadNestedInput
+  }
+
+  export type ThreadUncheckedUpdateWithoutReactionInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    authorId?: NullableIntFieldUpdateOperationsInput | number | null
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUncheckedUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUncheckedUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutThreadNestedInput
+  }
+
+  export type CommentUpsertWithoutReactionInput = {
+    update: XOR<CommentUpdateWithoutReactionInput, CommentUncheckedUpdateWithoutReactionInput>
+    create: XOR<CommentCreateWithoutReactionInput, CommentUncheckedCreateWithoutReactionInput>
+  }
+
+  export type CommentUpdateWithoutReactionInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    thread?: ThreadUpdateOneWithoutCommentNestedInput
+    user?: UserUpdateOneWithoutCommentNestedInput
+    parent?: CommentUpdateOneWithoutChildrenNestedInput
+    children?: CommentUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommentUncheckedUpdateWithoutReactionInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    children?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserUpsertWithoutReactionInput = {
+    update: XOR<UserUpdateWithoutReactionInput, UserUncheckedUpdateWithoutReactionInput>
+    create: XOR<UserCreateWithoutReactionInput, UserUncheckedCreateWithoutReactionInput>
+  }
+
+  export type UserUpdateWithoutReactionInput = {
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUpdateManyWithoutUserNestedInput
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutReactionInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type ThreadCreateWithoutCommentInput = {
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    author?: UserCreateNestedOneWithoutThreadCreatedInput
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user?: userThreadsCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsCreateNestedManyWithoutThreadInput
+    reaction?: reactionCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadUncheckedCreateWithoutCommentInput = {
+    id?: number
+    content: string
+    totalReact?: number | null
+    totalComment?: number | null
+    authorId?: number | null
+    privacy?: ThreadPrivacy
+    destination?: DestinationThread
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user?: userThreadsUncheckedCreateNestedManyWithoutThreadInput
+    attachment?: threadAttachmentsUncheckedCreateNestedManyWithoutThreadInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutThreadInput
+  }
+
+  export type ThreadCreateOrConnectWithoutCommentInput = {
+    where: ThreadWhereUniqueInput
+    create: XOR<ThreadCreateWithoutCommentInput, ThreadUncheckedCreateWithoutCommentInput>
+  }
+
+  export type UserCreateWithoutCommentInput = {
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionCreateNestedManyWithoutUserInput
+    user?: relationshipCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutCommentInput = {
+    id?: number
+    userName?: string | null
+    email: string
+    firstName?: string | null
+    surName?: string | null
+    fullName?: string | null
+    gender?: Gender | null
+    birth?: Date | string | null
+    avatar?: string | null
+    cover?: string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password: string
+    threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
+    monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutCommentInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutCommentInput, UserUncheckedCreateWithoutCommentInput>
+  }
+
+  export type CommentCreateWithoutChildrenInput = {
+    content: string
+    thread?: ThreadCreateNestedOneWithoutCommentInput
+    user?: UserCreateNestedOneWithoutCommentInput
+    parent?: CommentCreateNestedOneWithoutChildrenInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUncheckedCreateWithoutChildrenInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    userId?: number | null
+    parentId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionUncheckedCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentCreateOrConnectWithoutChildrenInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutChildrenInput, CommentUncheckedCreateWithoutChildrenInput>
+  }
+
+  export type CommentCreateWithoutParentInput = {
+    content: string
+    thread?: ThreadCreateNestedOneWithoutCommentInput
+    user?: UserCreateNestedOneWithoutCommentInput
+    children?: CommentCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentUncheckedCreateWithoutParentInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    userId?: number | null
+    children?: CommentUncheckedCreateNestedManyWithoutParentInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    reaction?: reactionUncheckedCreateNestedManyWithoutCommentInput
+  }
+
+  export type CommentCreateOrConnectWithoutParentInput = {
+    where: CommentWhereUniqueInput
+    create: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput>
+  }
+
+  export type CommentCreateManyParentInputEnvelope = {
+    data: Enumerable<CommentCreateManyParentInput>
+    skipDuplicates?: boolean
+  }
+
+  export type reactionCreateWithoutCommentInput = {
+    react: ReactType
+    thread?: ThreadCreateNestedOneWithoutReactionInput
+    user?: UserCreateNestedOneWithoutReactionInput
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionUncheckedCreateWithoutCommentInput = {
+    id?: number
+    react: ReactType
+    threadId?: number | null
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionCreateOrConnectWithoutCommentInput = {
+    where: reactionWhereUniqueInput
+    create: XOR<reactionCreateWithoutCommentInput, reactionUncheckedCreateWithoutCommentInput>
+  }
+
+  export type reactionCreateManyCommentInputEnvelope = {
+    data: Enumerable<reactionCreateManyCommentInput>
+    skipDuplicates?: boolean
+  }
+
+  export type ThreadUpsertWithoutCommentInput = {
+    update: XOR<ThreadUpdateWithoutCommentInput, ThreadUncheckedUpdateWithoutCommentInput>
+    create: XOR<ThreadCreateWithoutCommentInput, ThreadUncheckedCreateWithoutCommentInput>
+  }
+
+  export type ThreadUpdateWithoutCommentInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    author?: UserUpdateOneWithoutThreadCreatedNestedInput
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUpdateManyWithoutThreadNestedInput
+  }
+
+  export type ThreadUncheckedUpdateWithoutCommentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
+    authorId?: NullableIntFieldUpdateOperationsInput | number | null
+    privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
+    destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUncheckedUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUncheckedUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutThreadNestedInput
+  }
+
+  export type UserUpsertWithoutCommentInput = {
+    update: XOR<UserUpdateWithoutCommentInput, UserUncheckedUpdateWithoutCommentInput>
+    create: XOR<UserCreateWithoutCommentInput, UserUncheckedCreateWithoutCommentInput>
+  }
+
+  export type UserUpdateWithoutCommentInput = {
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUpdateManyWithoutUserNestedInput
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutCommentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    surName?: NullableStringFieldUpdateOperationsInput | string | null
+    fullName?: NullableStringFieldUpdateOperationsInput | string | null
+    gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
+    birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
+    information?: NullableJsonNullValueInput | InputJsonValue
+    password?: StringFieldUpdateOperationsInput | string
+    threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
+    monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type CommentUpsertWithoutChildrenInput = {
+    update: XOR<CommentUpdateWithoutChildrenInput, CommentUncheckedUpdateWithoutChildrenInput>
+    create: XOR<CommentCreateWithoutChildrenInput, CommentUncheckedCreateWithoutChildrenInput>
+  }
+
+  export type CommentUpdateWithoutChildrenInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    thread?: ThreadUpdateOneWithoutCommentNestedInput
+    user?: UserUpdateOneWithoutCommentNestedInput
+    parent?: CommentUpdateOneWithoutChildrenNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutChildrenInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUncheckedUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUpsertWithWhereUniqueWithoutParentInput = {
+    where: CommentWhereUniqueInput
+    update: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
+    create: XOR<CommentCreateWithoutParentInput, CommentUncheckedCreateWithoutParentInput>
+  }
+
+  export type CommentUpdateWithWhereUniqueWithoutParentInput = {
+    where: CommentWhereUniqueInput
+    data: XOR<CommentUpdateWithoutParentInput, CommentUncheckedUpdateWithoutParentInput>
+  }
+
+  export type CommentUpdateManyWithWhereWithoutParentInput = {
+    where: CommentScalarWhereInput
+    data: XOR<CommentUpdateManyMutationInput, CommentUncheckedUpdateManyWithoutChildrenInput>
+  }
+
+  export type reactionUpsertWithWhereUniqueWithoutCommentInput = {
+    where: reactionWhereUniqueInput
+    update: XOR<reactionUpdateWithoutCommentInput, reactionUncheckedUpdateWithoutCommentInput>
+    create: XOR<reactionCreateWithoutCommentInput, reactionUncheckedCreateWithoutCommentInput>
+  }
+
+  export type reactionUpdateWithWhereUniqueWithoutCommentInput = {
+    where: reactionWhereUniqueInput
+    data: XOR<reactionUpdateWithoutCommentInput, reactionUncheckedUpdateWithoutCommentInput>
+  }
+
+  export type reactionUpdateManyWithWhereWithoutCommentInput = {
+    where: reactionScalarWhereInput
+    data: XOR<reactionUpdateManyMutationInput, reactionUncheckedUpdateManyWithoutReactionInput>
   }
 
   export type UserCreateWithoutSessionInput = {
@@ -7503,6 +17003,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
@@ -7510,7 +17011,12 @@ export namespace Prisma {
     isDelete?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    user?: relationshipCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
     monitoring?: MonitoringCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSessionInput = {
@@ -7523,6 +17029,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
@@ -7530,7 +17037,12 @@ export namespace Prisma {
     isDelete?: boolean
     createdAt?: Date | string
     updatedAt?: Date | string
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
     monitoring?: MonitoringUncheckedCreateNestedManyWithoutUserInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSessionInput = {
@@ -7552,6 +17064,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
@@ -7559,7 +17072,12 @@ export namespace Prisma {
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
     monitoring?: MonitoringUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionInput = {
@@ -7572,6 +17090,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
@@ -7579,7 +17098,12 @@ export namespace Prisma {
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
     monitoring?: MonitoringUncheckedUpdateManyWithoutUserNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutMonitoringInput = {
@@ -7591,6 +17115,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     threadCreated?: ThreadCreateNestedManyWithoutAuthorInput
@@ -7599,6 +17124,11 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     session?: SessionCreateNestedManyWithoutUserInput
+    user?: relationshipCreateNestedManyWithoutUserInput
+    relations?: relationshipCreateNestedManyWithoutFriendInput
+    userThreads?: userThreadsCreateNestedManyWithoutUserInput
+    reaction?: reactionCreateNestedManyWithoutUserInput
+    Comment?: CommentCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutMonitoringInput = {
@@ -7611,6 +17141,7 @@ export namespace Prisma {
     gender?: Gender | null
     birth?: Date | string | null
     avatar?: string | null
+    cover?: string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password: string
     threadCreated?: ThreadUncheckedCreateNestedManyWithoutAuthorInput
@@ -7619,6 +17150,11 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     session?: SessionUncheckedCreateNestedManyWithoutUserInput
+    user?: relationshipUncheckedCreateNestedManyWithoutUserInput
+    relations?: relationshipUncheckedCreateNestedManyWithoutFriendInput
+    userThreads?: userThreadsUncheckedCreateNestedManyWithoutUserInput
+    reaction?: reactionUncheckedCreateNestedManyWithoutUserInput
+    Comment?: CommentUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutMonitoringInput = {
@@ -7640,6 +17176,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     threadCreated?: ThreadUpdateManyWithoutAuthorNestedInput
@@ -7648,6 +17185,11 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     session?: SessionUpdateManyWithoutUserNestedInput
+    user?: relationshipUpdateManyWithoutUserNestedInput
+    relations?: relationshipUpdateManyWithoutFriendNestedInput
+    userThreads?: userThreadsUpdateManyWithoutUserNestedInput
+    reaction?: reactionUpdateManyWithoutUserNestedInput
+    Comment?: CommentUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutMonitoringInput = {
@@ -7660,6 +17202,7 @@ export namespace Prisma {
     gender?: NullableEnumGenderFieldUpdateOperationsInput | Gender | null
     birth?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    cover?: NullableStringFieldUpdateOperationsInput | string | null
     information?: NullableJsonNullValueInput | InputJsonValue
     password?: StringFieldUpdateOperationsInput | string
     threadCreated?: ThreadUncheckedUpdateManyWithoutAuthorNestedInput
@@ -7668,11 +17211,18 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     session?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    user?: relationshipUncheckedUpdateManyWithoutUserNestedInput
+    relations?: relationshipUncheckedUpdateManyWithoutFriendNestedInput
+    userThreads?: userThreadsUncheckedUpdateManyWithoutUserNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutUserNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ThreadCreateManyAuthorInput = {
     id?: number
     content: string
+    totalReact?: number | null
+    totalComment?: number | null
     privacy?: ThreadPrivacy
     destination?: DestinationThread
     isActive?: boolean
@@ -7695,6 +17245,28 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type relationshipCreateManyUserInput = {
+    id?: number
+    content: string
+    friendId?: number | null
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type relationshipCreateManyFriendInput = {
+    id?: number
+    content: string
+    userId?: number | null
+    relationType: RelationType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type MonitoringCreateManyUserInput = {
     id?: number
     type: LogType
@@ -7705,30 +17277,75 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type userThreadsCreateManyUserInput = {
+    id?: number
+    threadId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionCreateManyUserInput = {
+    id?: number
+    react: ReactType
+    threadId?: number | null
+    commentId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommentCreateManyUserInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    parentId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type ThreadUpdateWithoutAuthorInput = {
     content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
     privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
     destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
     isActive?: BoolFieldUpdateOperationsInput | boolean
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUpdateManyWithoutThreadNestedInput
   }
 
   export type ThreadUncheckedUpdateWithoutAuthorInput = {
     id?: IntFieldUpdateOperationsInput | number
     content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
     privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
     destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
     isActive?: BoolFieldUpdateOperationsInput | boolean
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: userThreadsUncheckedUpdateManyWithoutThreadNestedInput
+    attachment?: threadAttachmentsUncheckedUpdateManyWithoutThreadNestedInput
+    reaction?: reactionUncheckedUpdateManyWithoutThreadNestedInput
+    Comment?: CommentUncheckedUpdateManyWithoutThreadNestedInput
   }
 
   export type ThreadUncheckedUpdateManyWithoutThreadCreatedInput = {
     id?: IntFieldUpdateOperationsInput | number
     content?: StringFieldUpdateOperationsInput | string
+    totalReact?: NullableIntFieldUpdateOperationsInput | number | null
+    totalComment?: NullableIntFieldUpdateOperationsInput | number | null
     privacy?: EnumThreadPrivacyFieldUpdateOperationsInput | ThreadPrivacy
     destination?: EnumDestinationThreadFieldUpdateOperationsInput | DestinationThread
     isActive?: BoolFieldUpdateOperationsInput | boolean
@@ -7778,6 +17395,70 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type relationshipUpdateWithoutUserInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    friend?: UserUpdateOneWithoutRelationsNestedInput
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    friendId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipUncheckedUpdateManyWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    friendId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipUpdateWithoutFriendInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    user?: UserUpdateOneWithoutUserNestedInput
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipUncheckedUpdateWithoutFriendInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type relationshipUncheckedUpdateManyWithoutRelationsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationType?: EnumRelationTypeFieldUpdateOperationsInput | RelationType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type MonitoringUpdateWithoutUserInput = {
     type?: EnumLogTypeFieldUpdateOperationsInput | LogType
     detail?: NullableJsonNullValueInput | InputJsonValue
@@ -7801,6 +17482,321 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     type?: EnumLogTypeFieldUpdateOperationsInput | LogType
     detail?: NullableJsonNullValueInput | InputJsonValue
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsUpdateWithoutUserInput = {
+    thread?: ThreadUpdateOneWithoutUserNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsUncheckedUpdateManyWithoutUserThreadsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUpdateWithoutUserInput = {
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    thread?: ThreadUpdateOneWithoutReactionNestedInput
+    comment?: CommentUpdateOneWithoutReactionNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    commentId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUncheckedUpdateManyWithoutReactionInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    commentId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommentUpdateWithoutUserInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    thread?: ThreadUpdateOneWithoutCommentNestedInput
+    parent?: CommentUpdateOneWithoutChildrenNestedInput
+    children?: CommentUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    children?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUncheckedUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateManyWithoutCommentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsCreateManyThreadInput = {
+    id?: number
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type threadAttachmentsCreateManyThreadInput = {
+    id?: number
+    link: string
+    type: AttachmentType
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionCreateManyThreadInput = {
+    id?: number
+    react: ReactType
+    commentId?: number | null
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommentCreateManyThreadInput = {
+    id?: number
+    content: string
+    userId?: number | null
+    parentId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type userThreadsUpdateWithoutThreadInput = {
+    user?: UserUpdateOneWithoutUserThreadsNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsUncheckedUpdateWithoutThreadInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type userThreadsUncheckedUpdateManyWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type threadAttachmentsUpdateWithoutThreadInput = {
+    link?: StringFieldUpdateOperationsInput | string
+    type?: EnumAttachmentTypeFieldUpdateOperationsInput | AttachmentType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type threadAttachmentsUncheckedUpdateWithoutThreadInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    link?: StringFieldUpdateOperationsInput | string
+    type?: EnumAttachmentTypeFieldUpdateOperationsInput | AttachmentType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type threadAttachmentsUncheckedUpdateManyWithoutAttachmentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    link?: StringFieldUpdateOperationsInput | string
+    type?: EnumAttachmentTypeFieldUpdateOperationsInput | AttachmentType
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUpdateWithoutThreadInput = {
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    comment?: CommentUpdateOneWithoutReactionNestedInput
+    user?: UserUpdateOneWithoutReactionNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUncheckedUpdateWithoutThreadInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    commentId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommentUpdateWithoutThreadInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    user?: UserUpdateOneWithoutCommentNestedInput
+    parent?: CommentUpdateOneWithoutChildrenNestedInput
+    children?: CommentUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutThreadInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    parentId?: NullableIntFieldUpdateOperationsInput | number | null
+    children?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUncheckedUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentCreateManyParentInput = {
+    id?: number
+    content: string
+    threadId?: number | null
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type reactionCreateManyCommentInput = {
+    id?: number
+    react: ReactType
+    threadId?: number | null
+    userId?: number | null
+    isActive?: boolean
+    isDelete?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommentUpdateWithoutParentInput = {
+    content?: StringFieldUpdateOperationsInput | string
+    thread?: ThreadUpdateOneWithoutCommentNestedInput
+    user?: UserUpdateOneWithoutCommentNestedInput
+    children?: CommentUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateWithoutParentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    children?: CommentUncheckedUpdateManyWithoutParentNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    reaction?: reactionUncheckedUpdateManyWithoutCommentNestedInput
+  }
+
+  export type CommentUncheckedUpdateManyWithoutChildrenInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    content?: StringFieldUpdateOperationsInput | string
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUpdateWithoutCommentInput = {
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    thread?: ThreadUpdateOneWithoutReactionNestedInput
+    user?: UserUpdateOneWithoutReactionNestedInput
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    isDelete?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type reactionUncheckedUpdateWithoutCommentInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    react?: EnumReactTypeFieldUpdateOperationsInput | ReactType
+    threadId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     isDelete?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string

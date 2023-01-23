@@ -89,6 +89,18 @@ Prisma.NullTypes = {
 // https://github.com/microsoft/TypeScript/issues/3192#issuecomment-261720275
 function makeEnum(x) { return x; }
 
+exports.Prisma.CommentScalarFieldEnum = makeEnum({
+  id: 'id',
+  content: 'content',
+  threadId: 'threadId',
+  userId: 'userId',
+  parentId: 'parentId',
+  isActive: 'isActive',
+  isDelete: 'isDelete',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+});
+
 exports.Prisma.JsonNullValueFilter = makeEnum({
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull,
@@ -116,6 +128,30 @@ exports.Prisma.QueryMode = makeEnum({
   insensitive: 'insensitive'
 });
 
+exports.Prisma.ReactionScalarFieldEnum = makeEnum({
+  id: 'id',
+  react: 'react',
+  threadId: 'threadId',
+  commentId: 'commentId',
+  userId: 'userId',
+  isActive: 'isActive',
+  isDelete: 'isDelete',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+});
+
+exports.Prisma.RelationshipScalarFieldEnum = makeEnum({
+  id: 'id',
+  content: 'content',
+  userId: 'userId',
+  friendId: 'friendId',
+  relationType: 'relationType',
+  isActive: 'isActive',
+  isDelete: 'isDelete',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+});
+
 exports.Prisma.SessionScalarFieldEnum = makeEnum({
   id: 'id',
   refreshToken: 'refreshToken',
@@ -136,9 +172,22 @@ exports.Prisma.SortOrder = makeEnum({
   desc: 'desc'
 });
 
+exports.Prisma.ThreadAttachmentsScalarFieldEnum = makeEnum({
+  id: 'id',
+  link: 'link',
+  type: 'type',
+  threadId: 'threadId',
+  isActive: 'isActive',
+  isDelete: 'isDelete',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+});
+
 exports.Prisma.ThreadScalarFieldEnum = makeEnum({
   id: 'id',
   content: 'content',
+  totalReact: 'totalReact',
+  totalComment: 'totalComment',
   authorId: 'authorId',
   privacy: 'privacy',
   destination: 'destination',
@@ -165,6 +214,7 @@ exports.Prisma.UserScalarFieldEnum = makeEnum({
   gender: 'gender',
   birth: 'birth',
   avatar: 'avatar',
+  cover: 'cover',
   information: 'information',
   password: 'password',
   isActive: 'isActive',
@@ -172,6 +222,23 @@ exports.Prisma.UserScalarFieldEnum = makeEnum({
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 });
+
+exports.Prisma.UserThreadsScalarFieldEnum = makeEnum({
+  id: 'id',
+  userId: 'userId',
+  threadId: 'threadId',
+  isActive: 'isActive',
+  isDelete: 'isDelete',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+});
+exports.AttachmentType = makeEnum({
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO',
+  DOCUMENT: 'DOCUMENT',
+  OTHER_FILE: 'OTHER_FILE'
+});
+
 exports.DestinationThread = makeEnum({
   GROUP: 'GROUP',
   PERSONAL: 'PERSONAL',
@@ -190,6 +257,21 @@ exports.LogType = makeEnum({
   LOGOUT: 'LOGOUT'
 });
 
+exports.ReactType = makeEnum({
+  LIKE: 'LIKE',
+  HAHA: 'HAHA',
+  LOVE: 'LOVE',
+  SAD: 'SAD',
+  ANGRY: 'ANGRY',
+  WOW: 'WOW'
+});
+
+exports.RelationType = makeEnum({
+  FOLLOW: 'FOLLOW',
+  FRIEND: 'FRIEND',
+  BLOCK: 'BLOCK'
+});
+
 exports.ThreadPrivacy = makeEnum({
   PUBLIC: 'PUBLIC',
   PRIVATE: 'PRIVATE'
@@ -197,7 +279,12 @@ exports.ThreadPrivacy = makeEnum({
 
 exports.Prisma.ModelName = makeEnum({
   User: 'User',
+  relationship: 'relationship',
+  userThreads: 'userThreads',
   Thread: 'Thread',
+  threadAttachments: 'threadAttachments',
+  reaction: 'reaction',
+  Comment: 'Comment',
   Session: 'Session',
   Monitoring: 'Monitoring'
 });

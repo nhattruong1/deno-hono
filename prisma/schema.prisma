@@ -36,38 +36,142 @@ enum ThreadPrivacy {
   PRIVATE
 }
 
+enum RelationType {
+  FOLLOW
+  FRIEND
+  BLOCK
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  OTHER_FILE
+}
+
+enum ReactType {
+  LIKE
+  HAHA
+  LOVE
+  SAD
+  ANGRY
+  WOW
+}
+
 model User {
-  id            Int          @id @default(autoincrement())
-  userName      String?      @unique
-  email         String       @unique
+  id            Int            @id @default(autoincrement())
+  userName      String?        @unique
+  email         String         @unique
   firstName     String?
   surName       String?
   fullName      String?
   gender        Gender?
   birth         DateTime?
   avatar        String?
+  cover         String?
   information   Json?
   password      String
   threadCreated Thread[]
-  isActive      Boolean      @default(true)
-  isDelete      Boolean      @default(false)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  isActive      Boolean        @default(true)
+  isDelete      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   session       Session[]
+  user          relationship[] @relation("user")
+  relations     relationship[] @relation("relations")
   monitoring    Monitoring[]
+  userThreads   userThreads[]
+  reaction      reaction[]
+  Comment       Comment[]
+}
+
+model relationship {
+  id           Int          @id @default(autoincrement())
+  content      String
+  userId       Int?
+  friendId     Int?
+  user         User?        @relation("user", fields: [userId], references: [id])
+  friend       User?        @relation("relations", fields: [friendId], references: [id])
+  relationType RelationType
+  isActive     Boolean      @default(true)
+  isDelete     Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model userThreads {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  threadId  Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  thread    Thread?  @relation(fields: [threadId], references: [id])
+  isActive  Boolean  @default(true)
+  isDelete  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Thread {
-  id          Int               @id @default(autoincrement())
-  content     String
-  authorId    Int?
-  author      User?             @relation(fields: [authorId], references: [id])
-  privacy     ThreadPrivacy     @default(PUBLIC)
-  destination DestinationThread @default(PERSONAL)
-  isActive    Boolean           @default(true)
-  isDelete    Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id           Int                 @id @default(autoincrement())
+  content      String
+  totalReact   Int?                @default(0)
+  totalComment Int?                @default(0)
+  authorId     Int?
+  author       User?               @relation(fields: [authorId], references: [id])
+  privacy      ThreadPrivacy       @default(PUBLIC)
+  destination  DestinationThread   @default(PERSONAL)
+  isActive     Boolean             @default(true)
+  isDelete     Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  user         userThreads[]
+  attachment   threadAttachments[]
+  reaction     reaction[]
+  Comment      Comment[]
+}
+
+model threadAttachments {
+  id        Int            @id @default(autoincrement())
+  link      String
+  type      AttachmentType
+  threadId  Int?
+  thread    Thread?        @relation(fields: [threadId], references: [id])
+  isActive  Boolean        @default(true)
+  isDelete  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model reaction {
+  id        Int       @id @default(autoincrement())
+  react     ReactType
+  threadId  Int?
+  thread    Thread?   @relation(fields: [threadId], references: [id])
+  commentId Int?
+  comment   Comment?  @relation(fields: [commentId], references: [id])
+  userId    Int?
+  user      User?     @relation(fields: [userId], references: [id])
+  isActive  Boolean   @default(true)
+  isDelete  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Comment {
+  id        Int        @id @default(autoincrement())
+  content   String
+  threadId  Int?
+  thread    Thread?    @relation(fields: [threadId], references: [id])
+  userId    Int?
+  user      User?      @relation(fields: [userId], references: [id])
+  parentId  Int?
+  parent    Comment?   @relation("children", fields: [parentId], references: [id])
+  children  Comment[]  @relation("children")
+  isActive  Boolean    @default(true)
+  isDelete  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  reaction  reaction[]
 }
 
 model Session {
